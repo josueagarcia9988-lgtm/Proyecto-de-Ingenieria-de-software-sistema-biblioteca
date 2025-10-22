@@ -49,7 +49,7 @@ class Clientes(Base):
         
     )
 
-    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     nombres: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     email: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
