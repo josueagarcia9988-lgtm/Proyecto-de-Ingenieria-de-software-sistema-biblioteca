@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrar Cuenta - Sistema de Biblioteca</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 450px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="tel"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+        }
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .alert {
+            padding: 12px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background-color: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+        .alert-success {
+            background-color: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+        }
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+        .required {
+            color: #dc3545;
+        }
+        small {
+            color: #777;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1>Crear Cuenta</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST" action="{{ url_for('auth.registrar') }}">
+            <div class="form-group">
+                <label for="nombres">Nombres: <span class="required">*</span></label>
+                <input type="text" id="nombres" name="nombres" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="apellidos">Apellidos: <span class="required">*</span></label>
+                <input type="text" id="apellidos" name="apellidos" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email: <span class="required">*</span></label>
+                <input type="email" id="email" name="email" required>
+                <small>Este será tu nombre de usuario</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="telefono">Teléfono:</label>
+                <input type="tel" id="telefono" name="telefono" placeholder="Opcional">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Contraseña: <span class="required">*</span></label>
+                <input type="password" id="password" name="password" required minlength="6">
+                <small>Mínimo 6 caracteres</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="password_confirm">Confirmar Contraseña: <span class="required">*</span></label>
+                <input type="password" id="password_confirm" name="password_confirm" required minlength="6">
+            </div>
+            
+            <button type="submit">Registrarse</button>
+        </form>
+        
+        <div class="login-link">
+            ¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -7,10 +7,22 @@
 </head>
 <body>
     <h1>Bienvenido al Sistema de Biblioteca</h1>
-    <nav>
-        <a href="/">Inicio</a>
-        <a href="/libros">Libros</a>
-        <a href="/usuarios">Usuarios</a>
-    </nav>
+    
+    {% if current_user.is_authenticated %}
+        <p>¡Hola {{ current_user.nombres }} {{ current_user.apellidos }}!</p>
+        <p>Email: {{ current_user.email }}</p>
+        <p>Tipo de usuario: {{ current_user.tipo_usuario }}</p>
+        <nav>
+            <a href="/">Inicio</a>
+            <a href="/libros">Libros</a>
+            <a href="/clientes">Usuarios</a>
+            <a href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
+        </nav>
+    {% else %}
+        <p>Por favor inicia sesión</p>
+        <nav>
+            <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
+        </nav>
+    {% endif %}
 </body>
 </html>

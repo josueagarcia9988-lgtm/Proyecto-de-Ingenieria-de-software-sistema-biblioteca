@@ -45,9 +45,11 @@ class Clientes(Base):
     __tablename__ = 'Clientes'
     __table_args__ = (
         PrimaryKeyConstraint('id_cliente', name='PK_Usuarios'),
+
+        
     )
 
-    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     nombres: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     email: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
@@ -69,6 +71,22 @@ class Clientes(Base):
     Tickets: Mapped[list['Tickets']] = relationship('Tickets', back_populates='Clientes_')
     Venta: Mapped[list['Venta']] = relationship('Venta', back_populates='Clientes_')
     Respuesta_Ticket: Mapped[list['RespuestaTicket']] = relationship('RespuestaTicket', back_populates='Clientes_')
+
+    # Métodos requeridos por Flask-Login
+    def get_id(self):
+        return str(self.id_cliente)
+    
+    @property
+    def is_active(self):
+        return bool(self.activo)
+    
+    @property
+    def is_authenticated(self):
+        return True
+    
+    @property
+    def is_anonymous(self):
+        return False
 
 
 class EstadoVenta(Base):
