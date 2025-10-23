@@ -15,7 +15,7 @@
         <nav>
             <a href="/">Inicio</a>
             <a href="/libros">Libros</a>
-            <a href="/clientes">Usuarios</a>
+            <a href="{{ url_for('clientes.listar') }}">Gestión de Clientes</a>
             <a href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
         </nav>
     {% else %}

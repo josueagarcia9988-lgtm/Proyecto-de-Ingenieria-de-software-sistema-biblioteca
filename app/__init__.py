@@ -25,9 +25,11 @@ def create_app():
     # Registrar blueprints (rutas)
     from app.routes import main
     from app.routes.auth import auth
+    from app.routes.clientes import clientes_bp  # ← Agregar esta línea
+
     app.register_blueprint(main)
     app.register_blueprint(auth)
-    
+    app.register_blueprint(clientes_bp)
     return app
 
 @login_manager.user_loader
