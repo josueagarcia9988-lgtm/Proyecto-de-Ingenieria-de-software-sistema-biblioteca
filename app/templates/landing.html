@@ -5,61 +5,121 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Biblioteca Romava</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <h1>📚 Biblioteca Romava</h1>
-            <p>Gestión Bibliotecaria Inteligente</p>
-        </div>
+    <!-- Encabezado -->
+    <header class="navbar">
+        <div class="logo">📚 Biblioteca <span>Romava</span></div>
         <nav>
-            <a href="#inicio">Inicio</a>
-            <a href="#servicios">Servicios</a>
-            <a href="#funcionalidades">Funcionalidades</a>
-            <a href="#contacto">Contacto</a>
+            <ul>
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#funcionalidades">Funcionalidades</a></li>
+                <li><a href="#equipo">Nuestro Equipo</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+                <li><a href="{{ url_for('auth.login') }}" class="btn-login">Login</a></li>
+            </ul>
         </nav>
     </header>
 
+    <!-- Hero principal -->
     <section id="inicio" class="hero">
-        <div class="hero-text">
-            <h2>Moderniza tu Biblioteca</h2>
-            <p>Un sistema integral para gestionar préstamos, usuarios, pagos y más, diseñado para bibliotecas modernas.</p>
+        <div class="hero-content">
+            <h1>Gestiona tu biblioteca de forma <span>inteligente</span></h1>
+            <p>Biblioteca Romava es un sistema moderno que simplifica el control de préstamos, devoluciones, usuarios y mucho más.</p>
             <a href="#funcionalidades" class="btn">Descubre más</a>
         </div>
     </section>
 
-    <section id="servicios" class="services">
-        <h2>Servicios Destacados</h2>
-        <div class="cards">
-            <div class="card">
-                <h3></h3>
-                <p></p>
+    <!-- Sección de funcionalidades -->
+    <section id="funcionalidades" class="features">
+        <h2>Lo que puedes hacer con Romava</h2>
+        <div class="feature-grid">
+            <!-- FUNCIONALIDADES PRINCIPALES -->
+            <div class="feature-card">
+                <h3>Búsqueda Inteligente de Libros</h3>
+                <p>Encuentra cualquier libro fácilmente por título, autor o código de barras.</p>
             </div>
-            <div class="card">
-                <h3></h3>
-                <p></p>
+            <div class="feature-card">
+                <h3>Sistema de Préstamos</h3>
+                <p>Registra préstamos y devoluciones con seguimiento en tiempo real.</p>
             </div>
-            <div class="card">
-                <h3></h3>
-                <p></p>
+            <div class="feature-card">
+                <h3>Gestión de Multas</h3>
+                <p>Administra multas automáticamente y mantén un control claro de los pagos pendientes.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Métodos de Pago Integrados</h3>
+                <p>Realiza y registra pagos de forma segura y rápida directamente en el sistema.</p>
+            </div>
+        </div>
+
+        <!-- BOTÓN DE VER MÁS -->
+        <div class="ver-mas-container">
+            <button id="verMasBtn" class="btn">Ver más</button>
+        </div>
+
+        <!-- FUNCIONALIDADES OCULTAS -->
+        <div id="funcionalidadesExtra" class="feature-grid oculto">
+            <div class="feature-card">
+                <h3>Reseñas y Opiniones</h3>
+                <p>Permite a los usuarios compartir comentarios sobre los libros leídos.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Foro de Lectores</h3>
+                <p>Fomenta la comunidad literaria con debates y recomendaciones.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Notificaciones Automáticas</h3>
+                <p>Envía avisos de devolución, multas o nuevos libros disponibles.</p>
+            </div>
+            <div class="feature-card">
+                <h3>Sistema de Tickets</h3>
+                <p>Los usuarios pueden reportar incidencias o solicitar soporte fácilmente.</p>
             </div>
         </div>
     </section>
 
-    <section id="funcionalidades" class="features">
-        <h2>Principales Funcionalidades</h2>
-        <ul>
-        </ul>
+    <!-- Sección del equipo -->
+    <section id="equipo" class="team">
+        <h2>Conoce al Equipo Romava</h2>
+        <div class="team-grid">
+            <div class="member">
+                <img src="https://cdn-icons-png.flaticon.com/512/236/236831.png" alt="Equipo">
+                <h3>Equipo Romava</h3>
+                <p>Grupo de estudiantes apasionados por la tecnología y la lectura, desarrolladores del sistema Biblioteca Romava.</p>
+            </div>
+        </div>
     </section>
 
+    <!-- Contacto -->
     <section id="contacto" class="contact">
         <h2>Contáctanos</h2>
-        <p>contacto@bibliotecaromava.com</p>
+        <p>¿Tienes alguna duda o sugerencia? Escríbenos o visítanos.</p>
+        <div class="contact-info">
+            <p>Dirección: Calle Principal Jose Cecilio del Valle, Tegucigalpa, Honduras</p>
+            <p>Email: contacto@bibliotecaromava.com</p>
+            <p>Teléfono: +504 9999-8888</p>
+        </div>
+        <a href="mailto:contacto@bibliotecaromava.com" class="btn">Enviar mensaje</a>
     </section>
 
+    <!-- Pie de página -->
     <footer>
-        <p>© 2025 Biblioteca Romava</p>
+        <p>© 2025 Biblioteca Romava | Todos los derechos reservados</p>
     </footer>
+
+    <!-- SCRIPT PARA MOSTRAR MÁS -->
+    <script>
+        const verMasBtn = document.getElementById('verMasBtn');
+        const funcionalidadesExtra = document.getElementById('funcionalidadesExtra');
+        let visible = false;
+
+        verMasBtn.addEventListener('click', () => {
+            visible = !visible;
+            funcionalidadesExtra.classList.toggle('oculto', !visible);
+            verMasBtn.textContent = visible ? 'Ver menos' : 'Ver más';
+        });
+    </script>
 </body>
 </html>
-
