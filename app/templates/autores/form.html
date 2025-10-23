@@ -1,0 +1,350 @@
+{% extends "index.html" %}
+
+{% block title %}{{ 'Editar' if autor else 'Nuevo' }} Autor - Biblioteca{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-header">
+        <h1>{{ '✏️ Editar Autor' if autor else '➕ Nuevo Autor' }}</h1>
+        <a href="{{ url_for('autores.listar') }}" class="btn btn-secondary">
+            ← Volver
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                    <button class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form method="POST" class="autor-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nombres">
+                        Nombres <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="nombres" 
+                        name="nombres" 
+                        class="form-control"
+                        value="{{ autor.nombres if autor else '' }}"
+                        required
+                        pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                        title="Solo se permiten letras y espacios"
+                        maxlength="100">
+                    <small class="form-text">Solo letras y espacios</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="apellidos">
+                        Apellidos <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="apellidos" 
+                        name="apellidos" 
+                        class="form-control"
+                        value="{{ autor.apellidos if autor else '' }}"
+                        required
+                        pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                        title="Solo se permiten letras y espacios"
+                        maxlength="100">
+                    <small class="form-text">Solo letras y espacios</small>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nacionalidad">
+                        Nacionalidad <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="nacionalidad" 
+                        name="nacionalidad" 
+                        class="form-control"
+                        value="{{ autor.nacionalidad if autor else '' }}"
+                        required
+                        maxlength="50">
+                </div>
+
+                <div class="form-group">
+                    <label for="fecha_nacimiento">
+                        Fecha de Nacimiento <span class="required">*</span>
+                    </label>
+                    <input 
+                        type="date" 
+                        id="fecha_nacimiento" 
+                        name="fecha_nacimiento" 
+                        class="form-control"
+                        value="{{ autor.fecha_nacimiento if autor else '' }}"
+                        required
+                        max="{{ today }}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="descripcion">
+                    Descripción
+                </label>
+                <textarea 
+                    id="descripcion" 
+                    name="descripcion" 
+                    class="form-control"
+                    rows="4"
+                    placeholder="Breve biografía del autor...">{{ autor.descripcion if autor else '' }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="observaciones">
+                    Observaciones
+                </label>
+                <textarea 
+                    id="observaciones" 
+                    name="observaciones" 
+                    class="form-control"
+                    rows="3"
+                    placeholder="Notas adicionales...">{{ autor.observaciones if autor else '' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <a href="{{ url_for('autores.listar') }}" class="btn btn-secondary">
+                    Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    {{ '💾 Guardar Cambios' if autor else '➕ Crear Autor' }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .form-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid #3498db;
+    }
+
+    .form-header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+    }
+
+    .alert {
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .close-btn:hover {
+        opacity: 1;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
+    }
+
+    .autor-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .required {
+        color: #e74c3c;
+    }
+
+    .form-control {
+        padding: 0.75rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+
+    .form-control:invalid {
+        border-color: #e74c3c;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .form-text {
+        margin-top: 0.25rem;
+        font-size: 0.85rem;
+        color: #7f8c8d;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid #ecf0f1;
+        margin-top: 1rem;
+    }
+
+    .btn {
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+
+    @media (max-width: 768px) {
+        .form-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column-reverse;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    // Set max date to today
+    document.addEventListener('DOMContentLoaded', function() {
+        const fechaInput = document.getElementById('fecha_nacimiento');
+        const today = new Date().toISOString().split('T')[0];
+        fechaInput.max = today;
+    });
+
+    // Form validation feedback
+    const form = document.querySelector('.autor-form');
+    const inputs = form.querySelectorAll('.form-control[required]');
+
+    inputs.forEach(input => {
+        input.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            this.classList.add('invalid');
+        });
+
+        input.addEventListener('input', function() {
+            if (this.validity.valid) {
+                this.classList.remove('invalid');
+            }
+        });
+    });
+</script>
+{% endblock %}
