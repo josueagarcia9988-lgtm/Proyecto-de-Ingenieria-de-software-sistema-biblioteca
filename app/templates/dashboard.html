@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Inicio{% endblock %}
+
+{% block content %}
+<div class="welcome-section">
+    <div class="welcome-card">
+        <h1>¡Bienvenido, {{ current_user.nombres }}! 👋</h1>
+        <p style="font-size: 1.1rem; color: #666; margin-top: 0.5rem;">
+            Gestiona tu biblioteca de forma eficiente
+        </p>
+
+        <div class="quick-links">
+            <a href="/libros" class="quick-link-card">
+                <div class="icon">📖</div>
+                <h3>Libros</h3>
+                <p>Administra el catálogo de libros</p>
+            </a>
+            <a href="{{ url_for('autores.listar') }}" class="quick-link-card">
+                <div class="icon">✍️</div>
+                <h3>Autores</h3>
+                <p>Gestiona los autores</p>
+            </a>
+            <a href="{{ url_for('clientes.listar') }}" class="quick-link-card">
+                <div class="icon">👥</div>
+                <h3>Clientes</h3>
+                <p>Administra los usuarios</p>
+            </a>
+            <a href="{{ url_for('tipos_documentos.listar') }}" class="quick-link-card">
+                <div class="icon">📑</div>
+                <h3>Tipos de Documentos</h3>
+                <p>Gestiona los tipos de documentos</p>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .welcome-section {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .welcome-card {
+        background: white;
+        border-radius: 15px;
+        padding: 3rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    .welcome-card h1 {
+        font-size: 2.5rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-weight: 700;
+    }
+
+    .quick-links {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-top: 3rem;
+    }
+
+    .quick-link-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2.5rem 2rem;
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .quick-link-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .quick-link-card .icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .quick-link-card h3 {
+        font-size: 1.4rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .quick-link-card p {
+        font-size: 0.95rem;
+        opacity: 0.9;
+        margin: 0;
+        font-weight: 400;
+    }
+
+    @media (max-width: 768px) {
+        .welcome-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .welcome-card h1 {
+            font-size: 1.8rem;
+        }
+
+        .quick-links {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

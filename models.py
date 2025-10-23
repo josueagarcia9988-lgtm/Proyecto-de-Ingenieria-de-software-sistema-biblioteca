@@ -16,7 +16,7 @@ class Autores(Base):
         PrimaryKeyConstraint('id_autor', name='PK_Autor'),
     )
 
-    id_autor: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_autor: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     nombres: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     nacionalidad: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
@@ -109,7 +109,7 @@ class Libros(Base):
         PrimaryKeyConstraint('id_libro', name='PK_Libros'),
     )
 
-    id_libro: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_libro: Mapped[int] = mapped_column(Integer, primary_key=True,)
     isbn: Mapped[str] = mapped_column(String(13, 'Modern_Spanish_CI_AS'), nullable=False)
     titulo: Mapped[str] = mapped_column(String(255, 'Modern_Spanish_CI_AS'), nullable=False)
     formato: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
@@ -189,7 +189,7 @@ class TiposDocumentos(Base):
         PrimaryKeyConstraint('id_tipo_documento', name='PK_Tipos_Documentos'),
     )
 
-    id_tipo_documento: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_tipo_documento: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     nombre: Mapped[str] = mapped_column(Unicode(50, 'Modern_Spanish_CI_AS'), nullable=False)
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(Unicode(150, 'Modern_Spanish_CI_AS'))

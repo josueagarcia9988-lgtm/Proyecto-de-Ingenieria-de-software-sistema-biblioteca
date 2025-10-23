@@ -1,0 +1,392 @@
+{% extends "index.html" %}
+
+{% block title %}Tipos de Documentos - Biblioteca{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="header-section">
+        <h1>📄 Gestión de Tipos de Documentos</h1>
+        <a href="{{ url_for('tipos_documentos.crear') }}" class="btn btn-primary">
+            ➕ Nuevo Tipo
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                    <button class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="stats-cards">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tipos|length }}</div>
+                <div class="stat-label">Total de Tipos</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tipos|selectattr('activo', 'equalto', true)|list|length }}</div>
+                <div class="stat-label">Activos</div>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <div class="stat-info">
+                <div class="stat-value">{{ tipos|selectattr('activo', 'equalto', false)|list|length }}</div>
+                <div class="stat-label">Inactivos</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if tipos %}
+                    {% for tipo in tipos %}
+                    <tr class="{{ 'inactive-row' if not tipo.activo }}">
+                        <td>{{ tipo.id_tipo_documento }}</td>
+                        <td>
+                            <strong>{{ tipo.nombre }}</strong>
+                        </td>
+                        <td class="text-truncate">
+                            {{ tipo.descripcion if tipo.descripcion else '-' }}
+                        </td>
+                        <td>
+                            <span class="badge badge-{{ 'success' if tipo.activo else 'danger' }}">
+                                {{ '✓ Activo' if tipo.activo else '✗ Inactivo' }}
+                            </span>
+                        </td>
+                        <td class="actions">
+                            <a href="{{ url_for('tipos_documentos.editar', id=tipo.id_tipo_documento) }}" 
+                               class="btn btn-sm btn-warning" 
+                               title="Editar">
+                                ✏️
+                            </a>
+                            
+                            <form method="POST" 
+                                  action="{{ url_for('tipos_documentos.toggle_activo', id=tipo.id_tipo_documento) }}" 
+                                  style="display: inline;">
+                                <button type="submit" 
+                                        class="btn btn-sm btn-{{ 'secondary' if tipo.activo else 'success' }}" 
+                                        title="{{ 'Desactivar' if tipo.activo else 'Activar' }}">
+                                    {{ '🔒' if tipo.activo else '🔓' }}
+                                </button>
+                            </form>
+                            
+                            <form method="POST" 
+                                  action="{{ url_for('tipos_documentos.eliminar', id=tipo.id_tipo_documento) }}" 
+                                  style="display: inline;"
+                                  onsubmit="return confirm('¿Está seguro de eliminar el tipo de documento \"{{ tipo.nombre }}\"?\n\nEsta acción no se puede deshacer.');">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                    🗑️
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            No hay tipos de documentos registrados. <a href="{{ url_for('tipos_documentos.crear') }}">Crear el primero</a>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 3px solid #3498db;
+    }
+
+    .header-section h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2rem;
+    }
+
+    /* Stats Cards */
+    .stats-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: transform 0.3s ease;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+        color: #7f8c8d;
+    }
+
+    .alert {
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    .alert-error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+    }
+
+    .close-btn:hover {
+        opacity: 1;
+    }
+
+    .btn {
+        padding: 0.6rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .btn-primary {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #2980b9;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .btn-warning {
+        background-color: #f39c12;
+        color: white;
+    }
+
+    .btn-warning:hover {
+        background-color: #e67e22;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background-color: #229954;
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+
+    .table-container {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .data-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #ecf0f1;
+    }
+
+    .data-table tbody tr {
+        transition: background-color 0.2s ease;
+    }
+
+    .data-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .inactive-row {
+        opacity: 0.6;
+        background-color: #f9f9f9;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .badge-success {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .badge-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .text-truncate {
+        max-width: 300px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .text-center {
+        text-align: center;
+        padding: 3rem 1rem !important;
+        color: #7f8c8d;
+        font-style: italic;
+    }
+
+    .actions {
+        white-space: nowrap;
+    }
+
+    .actions form {
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .header-section {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .stats-cards {
+            grid-template-columns: 1fr;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .data-table {
+            min-width: 700px;
+        }
+    }
+</style>
+{% endblock %}

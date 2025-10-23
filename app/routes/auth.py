@@ -5,7 +5,7 @@ from app import db
 from models import Clientes
 from datetime import datetime
 from sqlalchemy import func
-import re  # ← Asegúrate de tener este import
+import re
 
 auth = Blueprint('auth', __name__)
 
@@ -22,6 +22,10 @@ def get_next_id():
 
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+    # ← ADD THIS CHECK AT THE BEGINNING
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
@@ -34,7 +38,7 @@ def login():
             if usuario.activo:
                 login_user(usuario)
                 flash('¡Inicio de sesión exitoso!', 'success')
-                return redirect(url_for('main.index'))
+                return redirect(url_for('main.index'))  # ← CHANGED
             else:
                 flash('Tu cuenta está inactiva.', 'error')
         else:
@@ -46,7 +50,6 @@ def login():
 def registrar():
     if request.method == 'POST':
         try:
-
             # Obtener datos del formulario
             nombres = request.form.get('nombres', '').strip()
             apellidos = request.form.get('apellidos', '').strip()
@@ -117,4 +120,4 @@ def registrar():
 def logout():
     logout_user()
     flash('Has cerrado sesión.', 'info')
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('main.index'))  # ← CHANGED (was 'auth.login')

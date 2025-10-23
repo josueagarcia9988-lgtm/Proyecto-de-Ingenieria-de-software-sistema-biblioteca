@@ -1,28 +1,213 @@
-<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Biblioteca</title>
+    <title>{% block title %}Sistema de Biblioteca{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding-bottom: 2rem;
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .btn-logout {
+            background: rgba(231, 76, 60, 0.8);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(231, 76, 60, 1);
+            transform: translateY(-2px);
+        }
+
+        .welcome-section {
+            max-width: 1200px;
+            margin: 3rem auto;
+            padding: 0 1rem;
+        }
+
+        .welcome-card {
+            background: white;
+            border-radius: 15px;
+            padding: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 3rem;
+        }
+
+        .quick-link-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-link-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
 </head>
 <body>
-    <h1>Bienvenido al Sistema de Biblioteca</h1>
-    
-    {% if current_user.is_authenticated %}
-        <p>¡Hola {{ current_user.nombres }} {{ current_user.apellidos }}!</p>
-        <p>Email: {{ current_user.email }}</p>
-        <p>Tipo de usuario: {{ current_user.tipo_usuario }}</p>
-        <nav>
-            <a href="/">Inicio</a>
-            <a href="/libros">Libros</a>
-            <a href="{{ url_for('clientes.listar') }}">Gestión de Clientes</a>
-            <a href="{{ url_for('auth.logout') }}">Cerrar Sesión</a>
-        </nav>
-    {% else %}
-        <p>Por favor inicia sesión</p>
-        <nav>
-            <a href="{{ url_for('auth.login') }}">Iniciar Sesión</a>
-        </nav>
-    {% endif %}
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/" class="navbar-brand">📚 Sistema de Biblioteca</a>
+
+            {% if current_user.is_authenticated %}
+                <ul class="navbar-nav" id="navMenu">
+                    <li><a href="/" class="nav-link">🏠 Inicio</a></li>
+                    <li><a href="/libros" class="nav-link">📖 Libros</a></li>
+                    <li><a href="{{ url_for('autores.listar') }}" class="nav-link">✍️ Autores</a></li>
+                    <li><a href="{{ url_for('clientes.listar') }}" class="nav-link">👥 Clientes</a></li>
+                    <li><a href="{{ url_for('tipos_documentos.listar') }}" class="nav-link">📑 Tipos de Documentos</a></li>
+                </ul>
+
+                <div class="user-info">
+                    <div class="user-avatar">{{ current_user.nombres[0] }}{{ current_user.apellidos[0] }}</div>
+                    <div>
+                        <span class="user-name">{{ current_user.nombres }} {{ current_user.apellidos }}</span><br>
+                        <span class="user-role">{{ current_user.tipo_usuario }}</span>
+                    </div>
+                    <a href="{{ url_for('auth.logout') }}" class="btn-logout">Cerrar Sesión</a>
+                </div>
+            {% else %}
+                <ul class="navbar-nav">
+                    <li><a href="{{ url_for('auth.login') }}" class="nav-link">🔐 Iniciar Sesión</a></li>
+                </ul>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="main-content">
+        {% block content %}
+        {% if current_user.is_authenticated %}
+        <div class="welcome-section">
+            <div class="welcome-card">
+                <h1>¡Bienvenido, {{ current_user.nombres }}! 👋</h1>
+                <p>Gestiona tu biblioteca de forma eficiente</p>
+
+                <div class="quick-links">
+                    <a href="/libros" class="quick-link-card">
+                        <h3>📖 Libros</h3>
+                        <p>Administra el catálogo de libros</p>
+                    </a>
+                    <a href="{{ url_for('autores.listar') }}" class="quick-link-card">
+                        <h3>✍️ Autores</h3>
+                        <p>Gestiona los autores</p>
+                    </a>
+                    <a href="{{ url_for('clientes.listar') }}" class="quick-link-card">
+                        <h3>👥 Clientes</h3>
+                        <p>Administra los usuarios</p>
+                    </a>
+                    <a href="{{ url_for('tipos_documentos.listar') }}" class="quick-link-card">
+                        <h3>📑 Tipos de Documentos</h3>
+                        <p>Gestiona los tipos de documentos</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="login-container">
+            <div class="login-card">
+                <h1>📚 Bienvenido</h1>
+                <p>Por favor inicia sesión para continuar</p>
+                <a href="{{ url_for('auth.login') }}" class="nav-link" style="display: inline-block; margin-top: 1rem; background: #667eea; padding: 0.75rem 2rem;">
+                    Iniciar Sesión
+                </a>
+            </div>
+        </div>
+        {% endif %}
+        {% endblock %}
+    </main>
 </body>
 </html>
