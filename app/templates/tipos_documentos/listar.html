@@ -1,44 +1,65 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
-{% block title %}Tipos de Documentos - Biblioteca{% endblock %}
+{% block title %}Tipos de Documentos{% endblock %}
 
 {% block content %}
 <div class="container">
-    <div class="header-section">
-        <h1>📄 Gestión de Tipos de Documentos</h1>
+    <!-- Header with Back Button -->
+    <div class="page-header">
+        <div class="header-left">
+            <a href="{{ url_for('main.index') }}" class="back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver
+            </a>
+            <div>
+                <h1>Tipos de Documentos</h1>
+                <p class="subtitle">Administra los tipos de documentos del sistema</p>
+            </div>
+        </div>
         <a href="{{ url_for('tipos_documentos.crear') }}" class="btn btn-primary">
-            ➕ Nuevo Tipo
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nuevo Tipo
         </a>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                    <button class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="stats-cards">
+    <!-- Stats Cards -->
+    <div class="stats-grid">
         <div class="stat-card">
-            <div class="stat-icon">📊</div>
+            <div class="stat-icon" style="background: #e6f3ff; color: #0066cc;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+            </div>
             <div class="stat-info">
                 <div class="stat-value">{{ tipos|length }}</div>
                 <div class="stat-label">Total de Tipos</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">✅</div>
+            <div class="stat-icon" style="background: #d4f4dd; color: #1e7e34;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            </div>
             <div class="stat-info">
                 <div class="stat-value">{{ tipos|selectattr('activo', 'equalto', true)|list|length }}</div>
                 <div class="stat-label">Activos</div>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon">❌</div>
+            <div class="stat-icon" style="background: #ffe0e0; color: #c41e3a;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </div>
             <div class="stat-info">
                 <div class="stat-value">{{ tipos|selectattr('activo', 'equalto', false)|list|length }}</div>
                 <div class="stat-label">Inactivos</div>
@@ -46,7 +67,30 @@
         </div>
     </div>
 
-    <div class="table-container">
+    <!-- Search Bar -->
+    <div class="filters-container">
+        <div class="search-box">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Buscar tipo de documento..." class="search-input">
+            <button class="clear-btn" id="clearBtn" onclick="clearSearch()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <select id="statusFilter" class="filter-select" onchange="applyFilters()">
+            <option value="">Todos los estados</option>
+            <option value="active">Activos</option>
+            <option value="inactive">Inactivos</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card">
         <table class="data-table">
             <thead>
                 <tr>
@@ -57,336 +101,230 @@
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
-                {% if tipos %}
-                    {% for tipo in tipos %}
-                    <tr class="{{ 'inactive-row' if not tipo.activo }}">
-                        <td>{{ tipo.id_tipo_documento }}</td>
-                        <td>
-                            <strong>{{ tipo.nombre }}</strong>
-                        </td>
-                        <td class="text-truncate">
-                            {{ tipo.descripcion if tipo.descripcion else '-' }}
-                        </td>
-                        <td>
-                            <span class="badge badge-{{ 'success' if tipo.activo else 'danger' }}">
-                                {{ '✓ Activo' if tipo.activo else '✗ Inactivo' }}
-                            </span>
-                        </td>
-                        <td class="actions">
+            <tbody id="tableBody">
+                {% for tipo in tipos %}
+                <tr data-search="{{ tipo.nombre|lower }} {{ tipo.descripcion|lower if tipo.descripcion else '' }}"
+                    data-status="{{ 'active' if tipo.activo else 'inactive' }}">
+                    <td><strong>#{{ tipo.id_tipo_documento }}</strong></td>
+                    <td><strong>{{ tipo.nombre }}</strong></td>
+                    <td class="description">{{ tipo.descripcion if tipo.descripcion else '-' }}</td>
+                    <td>
+                        {% if tipo.activo %}
+                        <span class="badge badge-active">Activo</span>
+                        {% else %}
+                        <span class="badge badge-inactive">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
                             <a href="{{ url_for('tipos_documentos.editar', id=tipo.id_tipo_documento) }}" 
-                               class="btn btn-sm btn-warning" 
-                               title="Editar">
-                                ✏️
+                               class="action-btn edit" title="Editar">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
                             </a>
-                            
-                            <form method="POST" 
-                                  action="{{ url_for('tipos_documentos.toggle_activo', id=tipo.id_tipo_documento) }}" 
-                                  style="display: inline;">
-                                <button type="submit" 
-                                        class="btn btn-sm btn-{{ 'secondary' if tipo.activo else 'success' }}" 
-                                        title="{{ 'Desactivar' if tipo.activo else 'Activar' }}">
-                                    {{ '🔒' if tipo.activo else '🔓' }}
-                                </button>
-                            </form>
-                            
-                            <form method="POST" 
-                                  action="{{ url_for('tipos_documentos.eliminar', id=tipo.id_tipo_documento) }}" 
-                                  style="display: inline;"
-                                  onsubmit="return confirm('¿Está seguro de eliminar el tipo de documento \"{{ tipo.nombre }}\"?\n\nEsta acción no se puede deshacer.');">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
-                                    🗑️
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center">
-                            No hay tipos de documentos registrados. <a href="{{ url_for('tipos_documentos.crear') }}">Crear el primero</a>
-                        </td>
-                    </tr>
-                {% endif %}
+                            <button class="action-btn toggle" 
+                                    onclick="toggleStatus({{ tipo.id_tipo_documento }}, {{ tipo.activo|tojson }})"
+                                    title="{{ 'Desactivar' if tipo.activo else 'Activar' }}">
+                                {% if tipo.activo %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                {% else %}
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+                                </svg>
+                                {% endif %}
+                            </button>
+                            <button class="action-btn delete" 
+                                    onclick="showDeleteModal({{ tipo.id_tipo_documento }}, '{{ tipo.nombre }}')"
+                                    title="Eliminar">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
             </tbody>
         </table>
+        <div id="noResults" class="no-results">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p>No se encontraron resultados</p>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-header modal-danger">
+            <h3>Confirmar Eliminación</h3>
+            <button class="close-btn" onclick="closeModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Eliminar el tipo de documento <strong id="deleteName"></strong>?</p>
+            <p class="text-muted">Esta acción no se puede deshacer</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+            <form id="deleteForm" method="POST" style="display:inline">
+                <button type="submit" class="btn btn-danger">Eliminar</button>
+            </form>
+        </div>
     </div>
 </div>
 
 <style>
-    .container {
-        max-width: 1200px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-    }
+.container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
 
-    .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 3px solid #3498db;
-    }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.header-left { display: flex; gap: 1.5rem; align-items: center; }
+.back-btn { display: flex; align-items: center; gap: 0.5rem; color: #667eea; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s; }
+.back-btn:hover { background: #f0f4ff; }
+.page-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: #1a202c; }
+.subtitle { color: #718096; font-size: 0.9rem; margin-top: 0.25rem; }
 
-    .header-section h1 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 2rem;
-    }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-card { background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 1rem; }
+.stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+.stat-value { font-size: 1.75rem; font-weight: 700; color: #1a202c; }
+.stat-label { font-size: 0.85rem; color: #718096; }
 
-    /* Stats Cards */
-    .stats-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
+.filters-container { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; gap: 1rem; }
+.search-box { position: relative; flex: 1; }
+.search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; }
+.search-input { width: 100%; padding: 0.75rem 3rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: border 0.2s; }
+.search-input:focus { outline: none; border-color: #667eea; }
+.clear-btn { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; }
+.clear-btn.show { display: flex; }
+.filter-select { padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; cursor: pointer; background: white; min-width: 180px; }
+.filter-select:focus { outline: none; border-color: #667eea; }
 
-    .stat-card {
-        background: white;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        transition: transform 0.3s ease;
-    }
+.table-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.data-table th { padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; }
+.data-table td { padding: 1rem; border-bottom: 1px solid #f7fafc; }
+.data-table tbody tr { transition: background 0.2s; }
+.data-table tbody tr:hover { background: #f7fafc; }
+.description { color: #718096; max-width: 300px; }
 
-    .stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
+.badge { padding: 0.35rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500; }
+.badge-active { background: #d4f4dd; color: #1e7e34; }
+.badge-inactive { background: #ffe0e0; color: #c41e3a; }
 
-    .stat-icon {
-        font-size: 2.5rem;
-    }
+.actions { display: flex; gap: 0.5rem; }
+.action-btn { width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; text-decoration: none; }
+.action-btn.edit { background: #fff3cd; color: #856404; }
+.action-btn.edit:hover { background: #ffc107; color: white; }
+.action-btn.toggle { background: #e6f3ff; color: #0066cc; }
+.action-btn.toggle:hover { background: #0066cc; color: white; }
+.action-btn.delete { background: #ffe0e0; color: #c41e3a; }
+.action-btn.delete:hover { background: #dc3545; color: white; }
 
-    .stat-value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #2c3e50;
-    }
+.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; transition: all 0.2s; }
+.btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+.btn-secondary { background: #e2e8f0; color: #4a5568; }
+.btn-secondary:hover { background: #cbd5e0; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-danger:hover { background: #c82333; }
 
-    .stat-label {
-        font-size: 0.9rem;
-        color: #7f8c8d;
-    }
+.no-results { display: none; text-align: center; padding: 3rem; color: #a0aec0; }
+.no-results.show { display: block; }
+.no-results svg { margin: 0 auto 1rem; opacity: 0.3; }
+.no-results p { color: #718096; margin: 0; }
 
-    .alert {
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        border-radius: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        animation: slideDown 0.3s ease;
-    }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: white; border-radius: 12px; width: 90%; max-width: 400px; }
+.modal-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+.modal-danger { background: #dc3545; color: white; border-bottom: none; }
+.modal-header h3 { margin: 0; font-size: 1.25rem; }
+.close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.close-btn:hover { background: rgba(0,0,0,0.1); }
+.modal-body { padding: 1.5rem; }
+.modal-body p { margin: 0.5rem 0; }
+.text-muted { color: #a0aec0; font-size: 0.9rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem; justify-content: flex-end; }
 
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border-left: 4px solid #28a745;
-    }
-
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-left: 4px solid #dc3545;
-    }
-
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: inherit;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    }
-
-    .close-btn:hover {
-        opacity: 1;
-    }
-
-    .btn {
-        padding: 0.6rem 1.5rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-        font-weight: 500;
-    }
-
-    .btn-primary {
-        background-color: #3498db;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-    }
-
-    .btn-sm {
-        padding: 0.4rem 0.8rem;
-        font-size: 0.9rem;
-    }
-
-    .btn-warning {
-        background-color: #f39c12;
-        color: white;
-    }
-
-    .btn-warning:hover {
-        background-color: #e67e22;
-    }
-
-    .btn-danger {
-        background-color: #e74c3c;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background-color: #c0392b;
-    }
-
-    .btn-success {
-        background-color: #27ae60;
-        color: white;
-    }
-
-    .btn-success:hover {
-        background-color: #229954;
-    }
-
-    .btn-secondary {
-        background-color: #95a5a6;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background-color: #7f8c8d;
-    }
-
-    .table-container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    .data-table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .data-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        text-transform: uppercase;
-        font-size: 0.85rem;
-        letter-spacing: 0.5px;
-    }
-
-    .data-table td {
-        padding: 1rem;
-        border-bottom: 1px solid #ecf0f1;
-    }
-
-    .data-table tbody tr {
-        transition: background-color 0.2s ease;
-    }
-
-    .data-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .inactive-row {
-        opacity: 0.6;
-        background-color: #f9f9f9;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .badge-success {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .badge-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .text-truncate {
-        max-width: 300px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .text-center {
-        text-align: center;
-        padding: 3rem 1rem !important;
-        color: #7f8c8d;
-        font-style: italic;
-    }
-
-    .actions {
-        white-space: nowrap;
-    }
-
-    .actions form {
-        margin: 0;
-    }
-
-    @media (max-width: 768px) {
-        .header-section {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .stats-cards {
-            grid-template-columns: 1fr;
-        }
-
-        .table-container {
-            overflow-x: auto;
-        }
-
-        .data-table {
-            min-width: 700px;
-        }
-    }
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .header-left { flex-direction: column; align-items: flex-start; }
+    .filters-container { flex-direction: column; }
+    .stats-grid { grid-template-columns: 1fr; }
+}
 </style>
+
+<script>
+const searchInput = document.getElementById('searchInput');
+const statusFilter = document.getElementById('statusFilter');
+const clearBtn = document.getElementById('clearBtn');
+const tableBody = document.getElementById('tableBody');
+const noResults = document.getElementById('noResults');
+const rows = [...tableBody.querySelectorAll('tr')];
+
+function applyFilters() {
+    const search = searchInput.value.toLowerCase();
+    const status = statusFilter.value;
+    let visible = 0;
+    
+    rows.forEach(row => {
+        const matchSearch = !search || row.dataset.search.includes(search);
+        const matchStatus = !status || row.dataset.status === status;
+        
+        if (matchSearch && matchStatus) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    noResults.classList.toggle('show', visible === 0);
+    clearBtn.classList.toggle('show', search || status);
+}
+
+function clearSearch() {
+    searchInput.value = '';
+    statusFilter.value = '';
+    applyFilters();
+}
+
+searchInput.addEventListener('input', applyFilters);
+
+function toggleStatus(id, currentStatus) {
+    const action = currentStatus ? 'desactivar' : 'activar';
+    if (confirm(`¿Estás seguro de ${action} este tipo de documento?`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/tipos-documentos/toggle/${id}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function showDeleteModal(id, nombre) {
+    document.getElementById('deleteName').textContent = nombre;
+    document.getElementById('deleteForm').action = `/tipos-documentos/eliminar/${id}`;
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function closeModal() {
+    document.getElementById('deleteModal').classList.remove('show');
+}
+
+window.onclick = e => {
+    if (e.target.classList.contains('modal')) closeModal();
+};
+</script>
 {% endblock %}

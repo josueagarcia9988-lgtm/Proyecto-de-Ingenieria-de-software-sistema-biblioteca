@@ -9,7 +9,9 @@ login_manager = LoginManager()
 
 def create_app():
     # Crear la aplicación Flask
-    app = Flask(__name__)
+    app = Flask(__name__, 
+                static_folder='static',
+                static_url_path='/static')
     
     # Cargar configuración
     app.config.from_object(Config)
@@ -25,15 +27,16 @@ def create_app():
     # Registrar blueprints (rutas)
     from app.routes import main
     from app.routes.auth import auth
-    from app.routes.clientes import clientes_bp  # ← Agregar esta línea
+    from app.routes.clientes import clientes_bp
     from app.routes.autores import autores_bp
     from app.routes.tipos_documentos import tipos_documentos_bp
-
+    
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(clientes_bp)
     app.register_blueprint(autores_bp)
     app.register_blueprint(tipos_documentos_bp)
+    
     return app
 
 @login_manager.user_loader
