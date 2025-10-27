@@ -3,8 +3,51 @@ from flask_login import login_required
 from app import db
 from models import TiposDocumentos
 from sqlalchemy import func
+import re
 
 tipos_documentos_bp = Blueprint('tipos_documentos', __name__, url_prefix='/tipos-documentos')
+
+def validar_id(id_str):
+    """Validar ID del tipo de documento"""
+    if not id_str or not id_str.strip():
+        return False, 'El ID es obligatorio'
+    
+    try:
+        id_num = int(id_str)
+    except ValueError:
+        return False, 'El ID debe ser un número entero'
+    
+    if id_num <= 0:
+        return False, 'El ID debe ser un número positivo'
+    
+    if id_num > 9999:
+        return False, 'El ID no puede exceder 9999'
+    
+    return True, None
+
+def validar_nombre(nombre):
+    """Validar nombre del tipo de documento"""
+    if not nombre or not nombre.strip():
+        return False, 'El nombre es obligatorio'
+    
+    if len(nombre.strip()) < 2:
+        return False, 'El nombre debe tener al menos 2 caracteres'
+    
+    if len(nombre.strip()) > 50:
+        return False, 'El nombre no puede exceder 50 caracteres'
+    
+    # Validar que no contenga solo espacios o caracteres especiales
+    if not re.match(r'^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]+$', nombre):
+        return False, 'El nombre solo puede contener letras, números, espacios, guiones y puntos'
+    
+    return True, None
+
+def validar_descripcion(descripcion):
+    """Validar descripción del tipo de documento"""
+    if descripcion and len(descripcion.strip()) > 150:
+        return False, 'La descripción no puede exceder 150 caracteres'
+    
+    return True, None
 
 # READ - Listar todos los tipos de documentos
 @tipos_documentos_bp.route('/')
@@ -19,25 +62,18 @@ def listar():
 def crear():
     if request.method == 'POST':
         try:
-            id_tipo_documento = request.form.get('id_tipo_documento', '').strip()
+            id_tipo_documento_str = request.form.get('id_tipo_documento', '').strip()
             nombre = request.form.get('nombre', '').strip()
             descripcion = request.form.get('descripcion', '').strip()
             activo = request.form.get('activo') == 'on'
             
-            # Validaciones del ID
-            if not id_tipo_documento:
-                flash('El ID del tipo de documento es obligatorio.', 'error')
+            # Validar ID
+            valido, error = validar_id(id_tipo_documento_str)
+            if not valido:
+                flash(error, 'error')
                 return render_template('tipos_documentos/form.html')
             
-            try:
-                id_tipo_documento = int(id_tipo_documento)
-            except ValueError:
-                flash('El ID debe ser un número entero.', 'error')
-                return render_template('tipos_documentos/form.html')
-            
-            if id_tipo_documento <= 0:
-                flash('El ID debe ser un número positivo.', 'error')
-                return render_template('tipos_documentos/form.html')
+            id_tipo_documento = int(id_tipo_documento_str)
             
             # Verificar si ya existe un tipo con ese ID
             existe_id = db.session.get(TiposDocumentos, id_tipo_documento)
@@ -45,16 +81,13 @@ def crear():
                 flash(f'Ya existe un tipo de documento con el ID {id_tipo_documento}.', 'error')
                 return render_template('tipos_documentos/form.html')
             
-            # Validaciones del nombre
-            if not nombre:
-                flash('El nombre es obligatorio.', 'error')
+            # Validar nombre
+            valido, error = validar_nombre(nombre)
+            if not valido:
+                flash(error, 'error')
                 return render_template('tipos_documentos/form.html')
             
-            if len(nombre) > 50:
-                flash('El nombre no puede exceder 50 caracteres.', 'error')
-                return render_template('tipos_documentos/form.html')
-            
-            # Verificar si ya existe un tipo con ese nombre
+            # Verificar si ya existe un tipo con ese nombre (case-insensitive)
             existe_nombre = db.session.query(TiposDocumentos).filter(
                 func.lower(TiposDocumentos.nombre) == nombre.lower()
             ).first()
@@ -63,18 +96,24 @@ def crear():
                 flash(f'Ya existe un tipo de documento con el nombre "{nombre}".', 'error')
                 return render_template('tipos_documentos/form.html')
             
+            # Validar descripción
+            valido, error = validar_descripcion(descripcion)
+            if not valido:
+                flash(error, 'error')
+                return render_template('tipos_documentos/form.html')
+            
             # Crear tipo de documento
             nuevo_tipo = TiposDocumentos(
                 id_tipo_documento=id_tipo_documento,
-                nombre=nombre,
-                descripcion=descripcion if descripcion else None,
+                nombre=nombre.strip().title(),  # Capitalizar
+                descripcion=descripcion.strip() if descripcion else None,
                 activo=activo
             )
             
             db.session.add(nuevo_tipo)
             db.session.commit()
             
-            flash(f'Tipo de documento "{nombre}" creado exitosamente con ID {id_tipo_documento}.', 'success')
+            flash(f'Tipo de documento "{nombre}" creado exitosamente.', 'success')
             return redirect(url_for('tipos_documentos.listar'))
             
         except Exception as e:
@@ -98,13 +137,10 @@ def editar(id):
             descripcion = request.form.get('descripcion', '').strip()
             activo = request.form.get('activo') == 'on'
             
-            # Validaciones
-            if not nombre:
-                flash('El nombre es obligatorio.', 'error')
-                return render_template('tipos_documentos/form.html', tipo=tipo)
-            
-            if len(nombre) > 50:
-                flash('El nombre no puede exceder 50 caracteres.', 'error')
+            # Validar nombre
+            valido, error = validar_nombre(nombre)
+            if not valido:
+                flash(error, 'error')
                 return render_template('tipos_documentos/form.html', tipo=tipo)
             
             # Verificar si ya existe otro tipo con ese nombre
@@ -117,9 +153,15 @@ def editar(id):
                 flash(f'Ya existe otro tipo de documento con el nombre "{nombre}".', 'error')
                 return render_template('tipos_documentos/form.html', tipo=tipo)
             
+            # Validar descripción
+            valido, error = validar_descripcion(descripcion)
+            if not valido:
+                flash(error, 'error')
+                return render_template('tipos_documentos/form.html', tipo=tipo)
+            
             # Actualizar datos (el ID no se puede cambiar)
-            tipo.nombre = nombre
-            tipo.descripcion = descripcion if descripcion else None
+            tipo.nombre = nombre.strip().title()  # Capitalizar
+            tipo.descripcion = descripcion.strip() if descripcion else None
             tipo.activo = activo
             
             db.session.commit()
@@ -143,14 +185,25 @@ def eliminar(id):
             return redirect(url_for('tipos_documentos.listar'))
         
         # Verificar si tiene registros relacionados
-        if tipo.Clientes_Documento or tipo.Empleados_Documento:
-            flash('No se puede eliminar este tipo de documento porque tiene registros asociados.', 'error')
+        tiene_relaciones = False
+        mensaje_relaciones = []
+        
+        if hasattr(tipo, 'Clientes_Documento') and tipo.Clientes_Documento:
+            tiene_relaciones = True
+            mensaje_relaciones.append(f'{len(tipo.Clientes_Documento)} cliente(s)')
+        
+        if hasattr(tipo, 'Empleados_Documento') and tipo.Empleados_Documento:
+            tiene_relaciones = True
+            mensaje_relaciones.append(f'{len(tipo.Empleados_Documento)} empleado(s)')
+        
+        if tiene_relaciones:
+            flash(f'No se puede eliminar "{tipo.nombre}" porque está asociado a {" y ".join(mensaje_relaciones)}.', 'error')
             return redirect(url_for('tipos_documentos.listar'))
         
         nombre = tipo.nombre
         db.session.delete(tipo)
         db.session.commit()
-        flash(f'Tipo de documento "{nombre}" eliminado exitosamente.', 'success')
+        flash(f'Tipo de documento "{nombre}" eliminado exitosamente.', 'error')  # Red notification
         
     except Exception as e:
         db.session.rollback()
@@ -168,11 +221,25 @@ def toggle_activo(id):
             flash('Tipo de documento no encontrado.', 'error')
             return redirect(url_for('tipos_documentos.listar'))
         
+        # Verificar si tiene registros asociados antes de desactivar
+        if tipo.activo:  # Si está activo y queremos desactivar
+            tiene_uso = False
+            if hasattr(tipo, 'Clientes_Documento') and tipo.Clientes_Documento:
+                tiene_uso = True
+            if hasattr(tipo, 'Empleados_Documento') and tipo.Empleados_Documento:
+                tiene_uso = True
+            
+            if tiene_uso:
+                flash(f'Advertencia: El tipo "{tipo.nombre}" tiene documentos asociados. Al desactivarlo, no estará disponible para nuevos registros.', 'warning')
+        
         tipo.activo = not tipo.activo
         estado = "activado" if tipo.activo else "desactivado"
         
         db.session.commit()
-        flash(f'Tipo de documento "{tipo.nombre}" {estado} exitosamente.', 'success')
+        
+        # Usar categoría apropiada
+        categoria = 'success' if tipo.activo else 'warning'
+        flash(f'Tipo de documento "{tipo.nombre}" {estado} exitosamente.', categoria)
         
     except Exception as e:
         db.session.rollback()

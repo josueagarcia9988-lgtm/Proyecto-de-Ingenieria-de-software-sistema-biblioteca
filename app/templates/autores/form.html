@@ -1,125 +1,116 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
-{% block title %}{{ 'Editar' if autor else 'Nuevo' }} Autor - Biblioteca{% endblock %}
+{% block title %}{{ 'Editar' if autor else 'Nuevo' }} Autor{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="form-header">
-        <h1>{{ '✏️ Editar Autor' if autor else '➕ Nuevo Autor' }}</h1>
-        <a href="{{ url_for('autores.listar') }}" class="btn btn-secondary">
-            ← Volver
-        </a>
-    </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                    <button class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
+<div class="form-wrapper">
     <div class="form-container">
-        <form method="POST" class="autor-form">
-            <div class="form-row">
+        <div class="form-header">
+            <a href="{{ url_for('autores.listar') }}" class="back-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver
+            </a>
+            <h1>{{ 'Editar Autor' if autor else 'Nuevo Autor' }}</h1>
+            <p>{{ 'Actualiza la información del autor' if autor else 'Completa los datos del nuevo autor' }}</p>
+        </div>
+
+        <form method="POST" id="autorForm" class="form-content">
+            <div class="form-grid">
+                <!-- Nombres -->
                 <div class="form-group">
-                    <label for="nombres">
-                        Nombres <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="nombres" 
-                        name="nombres" 
-                        class="form-control"
-                        value="{{ autor.nombres if autor else '' }}"
-                        required
-                        pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                        title="Solo se permiten letras y espacios"
-                        maxlength="100">
-                    <small class="form-text">Solo letras y espacios</small>
+                    <label for="nombres">Nombres <span class="required">*</span></label>
+                    <input type="text" 
+                           id="nombres" 
+                           name="nombres" 
+                           class="form-input"
+                           value="{{ autor.nombres if autor else '' }}" 
+                           required 
+                           minlength="2"
+                           maxlength="50"
+                           pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                           placeholder="Ej: Gabriel José">
+                    <small class="form-hint">Solo letras y espacios (2-50 caracteres)</small>
                 </div>
 
+                <!-- Apellidos -->
                 <div class="form-group">
-                    <label for="apellidos">
-                        Apellidos <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="apellidos" 
-                        name="apellidos" 
-                        class="form-control"
-                        value="{{ autor.apellidos if autor else '' }}"
-                        required
-                        pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
-                        title="Solo se permiten letras y espacios"
-                        maxlength="100">
-                    <small class="form-text">Solo letras y espacios</small>
+                    <label for="apellidos">Apellidos <span class="required">*</span></label>
+                    <input type="text" 
+                           id="apellidos" 
+                           name="apellidos" 
+                           class="form-input"
+                           value="{{ autor.apellidos if autor else '' }}" 
+                           required
+                           minlength="2"
+                           maxlength="50"
+                           pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                           placeholder="Ej: García Márquez">
+                    <small class="form-hint">Solo letras y espacios (2-50 caracteres)</small>
+                </div>
+
+                <!-- Nacionalidad -->
+                <div class="form-group">
+                    <label for="nacionalidad">Nacionalidad <span class="required">*</span></label>
+                    <input type="text" 
+                           id="nacionalidad" 
+                           name="nacionalidad" 
+                           class="form-input"
+                           value="{{ autor.nacionalidad if autor else '' }}" 
+                           required
+                           minlength="3"
+                           maxlength="50"
+                           pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
+                           placeholder="Ej: Colombiano">
+                    <small class="form-hint">País de origen del autor</small>
+                </div>
+
+                <!-- Fecha de Nacimiento -->
+                <div class="form-group">
+                    <label for="fecha_nacimiento">Fecha de Nacimiento <span class="required">*</span></label>
+                    <input type="date" 
+                           id="fecha_nacimiento" 
+                           name="fecha_nacimiento" 
+                           class="form-input"
+                           value="{{ autor.fecha_nacimiento if autor else '' }}" 
+                           required>
+                    <small class="form-hint">Fecha en formato DD/MM/AAAA</small>
+                </div>
+
+                <!-- Descripción -->
+                <div class="form-group full-width">
+                    <label for="descripcion">Descripción / Biografía</label>
+                    <textarea id="descripcion" 
+                              name="descripcion" 
+                              class="form-input" 
+                              rows="4"
+                              placeholder="Breve biografía, premios, obras destacadas...">{{ autor.descripcion if autor else '' }}</textarea>
+                    <small class="form-hint">Información relevante sobre el autor</small>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="form-group full-width">
+                    <label for="observaciones">Observaciones</label>
+                    <textarea id="observaciones" 
+                              name="observaciones" 
+                              class="form-input" 
+                              rows="3"
+                              placeholder="Notas adicionales...">{{ autor.observaciones if autor else '' }}</textarea>
+                    <small class="form-hint">Notas internas (opcional)</small>
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="nacionalidad">
-                        Nacionalidad <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="text" 
-                        id="nacionalidad" 
-                        name="nacionalidad" 
-                        class="form-control"
-                        value="{{ autor.nacionalidad if autor else '' }}"
-                        required
-                        maxlength="50">
-                </div>
-
-                <div class="form-group">
-                    <label for="fecha_nacimiento">
-                        Fecha de Nacimiento <span class="required">*</span>
-                    </label>
-                    <input 
-                        type="date" 
-                        id="fecha_nacimiento" 
-                        name="fecha_nacimiento" 
-                        class="form-control"
-                        value="{{ autor.fecha_nacimiento if autor else '' }}"
-                        required
-                        max="{{ today }}">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="descripcion">
-                    Descripción
-                </label>
-                <textarea 
-                    id="descripcion" 
-                    name="descripcion" 
-                    class="form-control"
-                    rows="4"
-                    placeholder="Breve biografía del autor...">{{ autor.descripcion if autor else '' }}</textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="observaciones">
-                    Observaciones
-                </label>
-                <textarea 
-                    id="observaciones" 
-                    name="observaciones" 
-                    class="form-control"
-                    rows="3"
-                    placeholder="Notas adicionales...">{{ autor.observaciones if autor else '' }}</textarea>
-            </div>
-
+            <!-- Botones -->
             <div class="form-actions">
-                <a href="{{ url_for('autores.listar') }}" class="btn btn-secondary">
-                    Cancelar
-                </a>
+                <a href="{{ url_for('autores.listar') }}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">
-                    {{ '💾 Guardar Cambios' if autor else '➕ Crear Autor' }}
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    {{ 'Actualizar' if autor else 'Crear' }} Autor
                 </button>
             </div>
         </form>
@@ -127,224 +118,222 @@
 </div>
 
 <style>
-    .container {
-        max-width: 900px;
-        margin: 2rem auto;
-        padding: 0 1rem;
+.form-wrapper {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.form-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.back-link {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.back-link:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.form-header h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.form-header p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.form-content {
+    padding: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.95rem;
+}
+
+.required {
+    color: #dc3545;
+}
+
+.form-input {
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-input.error {
+    border-color: #dc3545;
+}
+
+.form-hint {
+    font-size: 0.85rem;
+    color: #718096;
+}
+
+textarea.form-input {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 2rem;
+    border-top: 2px solid #e2e8f0;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
     }
 
-    .form-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 3px solid #3498db;
+    .back-link {
+        position: static;
+        display: inline-flex;
+        margin-bottom: 1rem;
     }
 
-    .form-header h1 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 2rem;
-    }
-
-    .alert {
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        border-radius: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        animation: slideDown 0.3s ease;
-    }
-
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border-left: 4px solid #28a745;
-    }
-
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-left: 4px solid #dc3545;
-    }
-
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: inherit;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    }
-
-    .close-btn:hover {
-        opacity: 1;
-    }
-
-    .form-container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 2rem;
-    }
-
-    .autor-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-group label {
-        margin-bottom: 0.5rem;
-        color: #2c3e50;
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-
-    .required {
-        color: #e74c3c;
-    }
-
-    .form-control {
-        padding: 0.75rem;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        font-family: inherit;
-    }
-
-    .form-control:focus {
-        outline: none;
-        border-color: #3498db;
-        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    }
-
-    .form-control:invalid {
-        border-color: #e74c3c;
-    }
-
-    textarea.form-control {
-        resize: vertical;
-        min-height: 80px;
-    }
-
-    .form-text {
-        margin-top: 0.25rem;
-        font-size: 0.85rem;
-        color: #7f8c8d;
+    .form-content {
+        padding: 1.5rem;
     }
 
     .form-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-        padding-top: 1rem;
-        border-top: 1px solid #ecf0f1;
-        margin-top: 1rem;
+        flex-direction: column-reverse;
+        gap: 0.75rem;
     }
 
     .btn {
-        padding: 0.75rem 2rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-        font-weight: 600;
+        width: 100%;
+        justify-content: center;
     }
-
-    .btn-primary {
-        background-color: #3498db;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-    }
-
-    .btn-secondary {
-        background-color: #95a5a6;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background-color: #7f8c8d;
-    }
-
-    @media (max-width: 768px) {
-        .form-header {
-            flex-direction: column;
-            gap: 1rem;
-            align-items: flex-start;
-        }
-
-        .form-row {
-            grid-template-columns: 1fr;
-        }
-
-        .form-actions {
-            flex-direction: column-reverse;
-        }
-
-        .btn {
-            width: 100%;
-        }
-    }
+}
 </style>
 
 <script>
-    // Set max date to today
-    document.addEventListener('DOMContentLoaded', function() {
-        const fechaInput = document.getElementById('fecha_nacimiento');
-        const today = new Date().toISOString().split('T')[0];
-        fechaInput.max = today;
-    });
+// Set max date to today and min date to 150 years ago
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha_nacimiento');
+    const today = new Date();
+    const maxDate = today.toISOString().split('T')[0];
+    
+    // 150 years ago
+    const minYear = today.getFullYear() - 150;
+    const minDate = `${minYear}-01-01`;
+    
+    fechaInput.max = maxDate;
+    fechaInput.min = minDate;
+});
 
-    // Form validation feedback
-    const form = document.querySelector('.autor-form');
-    const inputs = form.querySelectorAll('.form-control[required]');
+// Real-time validation for nombres
+document.getElementById('nombres').addEventListener('input', function(e) {
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
+    if (!regex.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+    }
+});
 
-    inputs.forEach(input => {
-        input.addEventListener('invalid', function(e) {
-            e.preventDefault();
-            this.classList.add('invalid');
-        });
+// Real-time validation for apellidos
+document.getElementById('apellidos').addEventListener('input', function(e) {
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
+    if (!regex.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+    }
+});
 
-        input.addEventListener('input', function() {
-            if (this.validity.valid) {
-                this.classList.remove('invalid');
-            }
-        });
-    });
+// Real-time validation for nacionalidad
+document.getElementById('nacionalidad').addEventListener('input', function(e) {
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
+    if (!regex.test(e.target.value)) {
+        e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+    }
+});
 </script>
 {% endblock %}

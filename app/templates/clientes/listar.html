@@ -1,102 +1,179 @@
-{% extends "index.html" %}
+{% extends "base.html" %}
 
-{% block title %}Gestión de Clientes - Biblioteca{% endblock %}
+{% block title %}Gestión de Clientes{% endblock %}
 
 {% block content %}
 <div class="container">
+    <!-- Header with Back Button -->
     <div class="page-header">
-        <div>
-            <h1>👥 Gestión de Clientes</h1>
-            <p class="subtitle">Administra los usuarios del sistema</p>
-        </div>
-        <div class="header-actions">
-            <a href="{{ url_for('clientes.crear') }}" class="btn btn-primary">
-                ➕ Nuevo Cliente
+        <div class="header-left">
+            <a href="{{ url_for('main.index') }}" class="back-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+                Volver
             </a>
+            <div>
+                <h1>Gestión de Clientes</h1>
+                <p class="subtitle">Administra los usuarios del sistema</p>
+            </div>
+        </div>
+        <a href="{{ url_for('clientes.crear') }}" class="btn btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Nuevo Cliente
+        </a>
+    </div>
+
+    <!-- Advanced Filters -->
+    <div class="filters-container">
+        <div class="search-box">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <input type="text" id="searchInput" placeholder="Buscar por nombre, email o teléfono..." class="search-input">
+            <button class="clear-btn" id="clearBtn" onclick="clearFilters()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="filter-group">
+            <select id="statusFilter" class="filter-select">
+                <option value="">Todos los estados</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+            </select>
+            <select id="typeFilter" class="filter-select">
+                <option value="">Todos los tipos</option>
+                <option value="cliente">Cliente</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </div>
+        <div class="filter-stats">
+            <span id="statsText">{{ clientes|length }} clientes</span>
         </div>
     </div>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">
-                    {{ message }}
-                    <button class="close-btn" onclick="this.parentElement.style.display='none'">&times;</button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
-    <div class="table-container">
-        <div class="table-responsive">
-            <table id="clientesTable" class="data-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombres</th>
-                        <th>Apellidos</th>
-                        <th>Email</th>
-                        <th>Teléfono</th>
-                        <th>Tipo</th>
-                        <th>Estado</th>
-                        <th>Fecha Registro</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cliente in clientes %}
-                    <tr>
-                        <td><strong>{{ cliente.id_cliente }}</strong></td>
-                        <td>{{ cliente.nombres }}</td>
-                        <td>{{ cliente.apellidos }}</td>
-                        <td>{{ cliente.email }}</td>
-                        <td>{{ cliente.telefono }}</td>
-                        <td><span class="badge badge-info">{{ cliente.tipo_usuario }}</span></td>
-                        <td>
-                            {% if cliente.activo %}
-                                <span class="badge badge-success">✓ Activo</span>
-                            {% else %}
-                                <span class="badge badge-danger">✗ Inactivo</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ cliente.fecha_registro.strftime('%d/%m/%Y') }}</td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="{{ url_for('clientes.editar', id=cliente.id_cliente) }}" 
-                                   class="btn-action btn-edit" 
-                                   title="Editar">
-                                    ✏️
-                                </a>
-                                <button type="button" 
-                                        class="btn-action btn-delete" 
-                                        onclick="showDeleteModal({{ cliente.id_cliente }}, '{{ cliente.nombres }}', '{{ cliente.apellidos }}')"
-                                        title="Eliminar">
-                                    🗑️
-                                </button>
+    <!-- Table -->
+    <div class="table-card">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Cliente</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                {% for cliente in clientes %}
+                <tr data-search="{{ (cliente.nombres + ' ' + cliente.apellidos + ' ' + cliente.email + ' ' + cliente.telefono)|lower }}"
+                    data-status="{{ 'active' if cliente.activo else 'inactive' }}"
+                    data-type="{{ cliente.tipo_usuario }}">
+                    <td>
+                        <div class="client-info">
+                            <div class="avatar">{{ cliente.nombres[0] }}{{ cliente.apellidos[0] }}</div>
+                            <div>
+                                <div class="client-name">{{ cliente.nombres }} {{ cliente.apellidos }}</div>
+                                <div class="client-id">#{{ cliente.id_cliente }}</div>
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                    </td>
+                    <td>{{ cliente.email }}</td>
+                    <td>{{ cliente.telefono }}</td>
+                    <td><span class="badge badge-type">{{ cliente.tipo_usuario }}</span></td>
+                    <td>
+                        {% if cliente.activo %}
+                        <span class="badge badge-active">Activo</span>
+                        {% else %}
+                        <span class="badge badge-inactive">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="actions">
+                            <button class="action-btn view" onclick='showDetails({{ cliente.id_cliente }}, "{{ cliente.nombres }}", "{{ cliente.apellidos }}", "{{ cliente.email }}", "{{ cliente.telefono }}", "{{ cliente.tipo_usuario }}", {{ cliente.activo|tojson }}, "{{ cliente.fecha_registro.strftime('%Y-%m-%d') }}", "{{ cliente.direccion }}", "{{ cliente.observaciones }}")' title="Ver detalles">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                    <circle cx="12" cy="12" r="3"></circle>
+                                </svg>
+                            </button>
+                            <a href="{{ url_for('clientes.editar', id=cliente.id_cliente) }}" class="action-btn edit" title="Editar">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                </svg>
+                            </a>
+                            <button class="action-btn delete" onclick='showDelete({{ cliente.id_cliente }}, "{{ cliente.nombres }} {{ cliente.apellidos }}")' title="Eliminar">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div id="noResults" class="no-results">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <p>No se encontraron resultados</p>
         </div>
     </div>
 </div>
 
-<!-- Modal de confirmación de eliminación -->
-<div id="deleteModal" class="modal">
+<!-- Details Modal -->
+<div id="detailsModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
-            <h3>⚠️ Confirmar Eliminación</h3>
-            <button class="close-modal" onclick="closeDeleteModal()">&times;</button>
+            <h3>Detalles del Cliente</h3>
+            <button class="close-btn" onclick="closeModal('detailsModal')">×</button>
         </div>
         <div class="modal-body">
-            <p>¿Estás seguro de eliminar a <strong id="clienteNombre"></strong>?</p>
-            <p class="text-muted">Esta acción no se puede deshacer.</p>
+            <div class="detail-grid">
+                <div class="detail-row"><label>ID:</label><span id="dId"></span></div>
+                <div class="detail-row"><label>Nombres:</label><span id="dNombres"></span></div>
+                <div class="detail-row"><label>Apellidos:</label><span id="dApellidos"></span></div>
+                <div class="detail-row"><label>Email:</label><span id="dEmail"></span></div>
+                <div class="detail-row"><label>Teléfono:</label><span id="dTelefono"></span></div>
+                <div class="detail-row"><label>Tipo:</label><span id="dTipo"></span></div>
+                <div class="detail-row"><label>Estado:</label><span id="dEstado"></span></div>
+                <div class="detail-row"><label>Fecha Registro:</label><span id="dFecha"></span></div>
+                <div class="detail-row full"><label>Dirección:</label><span id="dDireccion"></span></div>
+                <div class="detail-row full"><label>Observaciones:</label><span id="dObs"></span></div>
+            </div>
         </div>
         <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancelar</button>
-            <form id="deleteForm" method="POST" style="display: inline;">
+            <button class="btn btn-secondary" onclick="closeModal('detailsModal')">Cerrar</button>
+            <a href="#" id="editBtn" class="btn btn-primary">Editar</a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content modal-small">
+        <div class="modal-header modal-danger">
+            <h3>Confirmar Eliminación</h3>
+            <button class="close-btn" onclick="closeModal('deleteModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <p>¿Eliminar a <strong id="deleteName"></strong>?</p>
+            <p class="text-muted">Esta acción no se puede deshacer</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancelar</button>
+            <form id="deleteForm" method="POST" style="display:inline">
                 <button type="submit" class="btn btn-danger">Eliminar</button>
             </form>
         </div>
@@ -104,346 +181,167 @@
 </div>
 
 <style>
-    .container {
-        max-width: 1400px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-    }
+.container { max-width: 1400px; margin: 2rem auto; padding: 0 1rem; }
 
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding-bottom: 1rem;
-        border-bottom: 3px solid #3498db;
-    }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+.header-left { display: flex; gap: 1.5rem; align-items: center; }
+.back-btn { display: flex; align-items: center; gap: 0.5rem; color: #667eea; text-decoration: none; font-weight: 500; padding: 0.5rem 1rem; border-radius: 8px; transition: all 0.2s; }
+.back-btn:hover { background: #f0f4ff; }
+.page-header h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: #1a202c; }
+.subtitle { color: #718096; font-size: 0.9rem; margin-top: 0.25rem; }
 
-    .page-header h1 {
-        margin: 0;
-        color: #2c3e50;
-        font-size: 2rem;
-    }
+.filters-container { background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+.search-box { position: relative; margin-bottom: 1rem; }
+.search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; }
+.search-input { width: 100%; padding: 0.75rem 3rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: border 0.2s; }
+.search-input:focus { outline: none; border-color: #667eea; }
+.clear-btn { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; }
+.clear-btn.show { display: flex; }
+.filter-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
+.filter-select { flex: 1; padding: 0.75rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; cursor: pointer; background: white; }
+.filter-select:focus { outline: none; border-color: #667eea; }
+.filter-stats { color: #718096; font-size: 0.9rem; }
+.filter-stats span { font-weight: 600; color: #667eea; }
 
-    .subtitle {
-        color: #718096;
-        margin: 0.5rem 0 0 0;
-        font-size: 0.95em;
-    }
+.table-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.data-table th { padding: 1rem; text-align: left; font-weight: 600; font-size: 0.9rem; }
+.data-table td { padding: 1rem; border-bottom: 1px solid #f7fafc; }
+.data-table tbody tr { transition: background 0.2s; }
+.data-table tbody tr:hover { background: #f7fafc; }
 
-    .header-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
+.client-info { display: flex; align-items: center; gap: 0.75rem; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; }
+.client-name { font-weight: 600; color: #1a202c; }
+.client-id { font-size: 0.85rem; color: #a0aec0; }
 
-    .alert {
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        border-radius: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        animation: slideDown 0.3s ease;
-    }
+.badge { padding: 0.35rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500; }
+.badge-type { background: #e6f3ff; color: #0066cc; }
+.badge-active { background: #d4f4dd; color: #1e7e34; }
+.badge-inactive { background: #ffe0e0; color: #c41e3a; }
 
-    @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
+.actions { display: flex; gap: 0.5rem; }
+.action-btn { width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; text-decoration: none; }
+.action-btn.view { background: #e6f3ff; color: #0066cc; }
+.action-btn.view:hover { background: #0066cc; color: white; }
+.action-btn.edit { background: #fff3cd; color: #856404; }
+.action-btn.edit:hover { background: #ffc107; color: white; }
+.action-btn.delete { background: #ffe0e0; color: #c41e3a; }
+.action-btn.delete:hover { background: #dc3545; color: white; }
 
-    .alert-success {
-        background-color: #d4edda;
-        color: #155724;
-        border-left: 4px solid #28a745;
-    }
+.btn { padding: 0.75rem 1.5rem; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; transition: all 0.2s; }
+.btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
+.btn-secondary { background: #e2e8f0; color: #4a5568; }
+.btn-secondary:hover { background: #cbd5e0; }
+.btn-danger { background: #dc3545; color: white; }
+.btn-danger:hover { background: #c82333; }
 
-    .alert-error {
-        background-color: #f8d7da;
-        color: #721c24;
-        border-left: 4px solid #dc3545;
-    }
+.no-results { display: none; text-align: center; padding: 3rem; color: #a0aec0; }
+.no-results.show { display: block; }
+.no-results svg { margin: 0 auto 1rem; opacity: 0.3; }
+.no-results p { color: #718096; margin: 0; }
 
-    .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: inherit;
-        opacity: 0.7;
-        transition: opacity 0.2s;
-    }
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+.modal.show { display: flex; }
+.modal-content { background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+.modal-small { max-width: 400px; }
+.modal-header { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+.modal-header h3 { margin: 0; font-size: 1.25rem; }
+.modal-danger { background: #dc3545; color: white; border-bottom: none; }
+.close-btn { background: none; border: none; font-size: 1.5rem; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+.close-btn:hover { background: rgba(0,0,0,0.1); }
+.modal-body { padding: 1.5rem; }
+.detail-grid { display: grid; gap: 1rem; }
+.detail-row { display: grid; grid-template-columns: 120px 1fr; gap: 1rem; padding: 0.75rem; background: #f7fafc; border-radius: 6px; }
+.detail-row.full { grid-column: 1/-1; grid-template-columns: 120px 1fr; }
+.detail-row label { font-weight: 600; color: #4a5568; }
+.text-muted { color: #a0aec0; font-size: 0.9rem; margin-top: 0.5rem; }
+.modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem; justify-content: flex-end; }
 
-    .close-btn:hover { opacity: 1; }
-
-    .table-container {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
-        overflow-x: auto;
-    }
-
-    .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 0.95rem;
-    }
-
-    .data-table thead {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .data-table th {
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .data-table td {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #ecf0f1;
-    }
-
-    .data-table tbody tr:hover {
-        background-color: #f8f9fa;
-    }
-
-    .badge {
-        display: inline-block;
-        padding: 0.35rem 0.65rem;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-        white-space: nowrap;
-    }
-
-    .badge-success {
-        background-color: #d4edda;
-        color: #155724;
-    }
-
-    .badge-danger {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
-
-    .badge-info {
-        background-color: #d1ecf1;
-        color: #0c5460;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-action {
-        width: 32px;
-        height: 32px;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        text-decoration: none;
-    }
-
-    .btn-edit {
-        background-color: #ffc107;
-        color: white;
-    }
-
-    .btn-edit:hover {
-        background-color: #e0a800;
-        transform: translateY(-2px);
-    }
-
-    .btn-delete {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .btn-delete:hover {
-        background-color: #c82333;
-        transform: translateY(-2px);
-    }
-
-    .btn {
-        padding: 0.75rem 1.5rem;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 1rem;
-        text-decoration: none;
-        display: inline-block;
-        transition: all 0.3s ease;
-        font-weight: 600;
-    }
-
-    .btn-primary {
-        background-color: #3498db;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: #2980b9;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
-    }
-
-    .btn-secondary {
-        background-color: #95a5a6;
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background-color: #7f8c8d;
-    }
-
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333;
-    }
-
-    /* Modal Styles */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        animation: fadeIn 0.3s ease;
-    }
-
-    .modal.show {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    .modal-content {
-        background: white;
-        border-radius: 10px;
-        width: 90%;
-        max-width: 500px;
-        animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-        from { transform: translateY(50px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-    }
-
-    .modal-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid #ecf0f1;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .modal-header h3 {
-        margin: 0;
-        color: #2c3e50;
-    }
-
-    .close-modal {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #7f8c8d;
-        transition: color 0.2s;
-    }
-
-    .close-modal:hover {
-        color: #2c3e50;
-    }
-
-    .modal-body {
-        padding: 1.5rem;
-    }
-
-    .modal-body p {
-        margin: 0.5rem 0;
-        color: #2c3e50;
-    }
-
-    .text-muted {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-    }
-
-    .modal-footer {
-        padding: 1rem 1.5rem;
-        border-top: 1px solid #ecf0f1;
-        display: flex;
-        gap: 0.5rem;
-        justify-content: flex-end;
-    }
-
-    @media (max-width: 768px) {
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 1rem;
-        }
-
-        .table-container {
-            padding: 1rem;
-        }
-
-        .data-table {
-            font-size: 0.85rem;
-        }
-
-        .data-table th,
-        .data-table td {
-            padding: 0.5rem;
-        }
-    }
+@media (max-width: 768px) {
+    .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+    .header-left { flex-direction: column; align-items: flex-start; }
+    .filter-group { flex-direction: column; }
+    .data-table { font-size: 0.85rem; }
+    .data-table th, .data-table td { padding: 0.75rem 0.5rem; }
+    .detail-row { grid-template-columns: 1fr; }
+}
 </style>
 
 <script>
-    function showDeleteModal(id, nombres, apellidos) {
-        const modal = document.getElementById('deleteModal');
-        const nombreElement = document.getElementById('clienteNombre');
-        const form = document.getElementById('deleteForm');
-        
-        nombreElement.textContent = `${nombres} ${apellidos}`;
-        form.action = `/clientes/eliminar/${id}`;
-        
-        modal.classList.add('show');
-    }
+const searchInput = document.getElementById('searchInput');
+const statusFilter = document.getElementById('statusFilter');
+const typeFilter = document.getElementById('typeFilter');
+const clearBtn = document.getElementById('clearBtn');
+const tableBody = document.getElementById('tableBody');
+const noResults = document.getElementById('noResults');
+const statsText = document.getElementById('statsText');
+const rows = [...tableBody.querySelectorAll('tr')];
 
-    function closeDeleteModal() {
-        const modal = document.getElementById('deleteModal');
-        modal.classList.remove('show');
-    }
-
-    // Cerrar modal al hacer clic fuera de él
-    window.onclick = function(event) {
-        const modal = document.getElementById('deleteModal');
-        if (event.target == modal) {
-            closeDeleteModal();
+function applyFilters() {
+    const search = searchInput.value.toLowerCase();
+    const status = statusFilter.value;
+    const type = typeFilter.value;
+    let visible = 0;
+    
+    rows.forEach(row => {
+        const matchSearch = !search || row.dataset.search.includes(search);
+        const matchStatus = !status || row.dataset.status === status;
+        const matchType = !type || row.dataset.type === type;
+        
+        if (matchSearch && matchStatus && matchType) {
+            row.style.display = '';
+            visible++;
+        } else {
+            row.style.display = 'none';
         }
-    }
+    });
+    
+    noResults.classList.toggle('show', visible === 0);
+    statsText.textContent = `${visible} de ${rows.length} clientes`;
+    clearBtn.classList.toggle('show', search || status || type);
+}
+
+function clearFilters() {
+    searchInput.value = '';
+    statusFilter.value = '';
+    typeFilter.value = '';
+    applyFilters();
+}
+
+searchInput.addEventListener('input', applyFilters);
+statusFilter.addEventListener('change', applyFilters);
+typeFilter.addEventListener('change', applyFilters);
+
+function showDetails(id, nombres, apellidos, email, telefono, tipo, activo, fecha, direccion, observaciones) {
+    document.getElementById('dId').textContent = '#' + id;
+    document.getElementById('dNombres').textContent = nombres;
+    document.getElementById('dApellidos').textContent = apellidos;
+    document.getElementById('dEmail').textContent = email;
+    document.getElementById('dTelefono').textContent = telefono;
+    document.getElementById('dTipo').textContent = tipo;
+    document.getElementById('dEstado').innerHTML = activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>';
+    document.getElementById('dFecha').textContent = new Date(fecha).toLocaleDateString('es-HN');
+    document.getElementById('dDireccion').textContent = direccion || 'No especificada';
+    document.getElementById('dObs').textContent = observaciones || 'Sin observaciones';
+    document.getElementById('editBtn').href = `/clientes/editar/${id}`;
+    document.getElementById('detailsModal').classList.add('show');
+}
+
+function showDelete(id, name) {
+    document.getElementById('deleteName').textContent = name;
+    document.getElementById('deleteForm').action = `/clientes/eliminar/${id}`;
+    document.getElementById('deleteModal').classList.add('show');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+}
+
+window.onclick = e => {
+    if (e.target.classList.contains('modal')) closeModal(e.target.id);
+};
 </script>
 {% endblock %}

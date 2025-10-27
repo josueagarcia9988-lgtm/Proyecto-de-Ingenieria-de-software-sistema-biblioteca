@@ -6,28 +6,24 @@
     <title>{% block title %}Sistema de Biblioteca{% endblock %} - Biblioteca Romava</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Poppins', 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            font-family: 'Poppins', sans-serif;
+            background: #f8f9fa;
             min-height: 100vh;
-            padding-bottom: 2rem;
+            color: #2d3748;
         }
 
-        /* Navbar principal */
+        /* Navbar */
         .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 2rem;
             position: sticky;
             top: 0;
             z-index: 1000;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
         .navbar-container {
@@ -36,70 +32,134 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            height: 70px;
         }
 
         .navbar-brand {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 700;
+            color: #667eea;
             text-decoration: none;
-            color: white;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            transition: transform 0.3s ease;
         }
 
-        .navbar-brand:hover {
-            transform: scale(1.05);
-        }
-
-        .navbar-nav {
+        .navbar-menu {
             display: flex;
-            list-style: none;
-            gap: 0.5rem;
             align-items: center;
-            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .nav-link {
-            color: white;
+            color: #4a5568;
             text-decoration: none;
             padding: 0.5rem 1rem;
             border-radius: 8px;
-            transition: all 0.3s ease;
             font-weight: 500;
             font-size: 0.95rem;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .nav-link:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
+            background: #f7fafc;
+            color: #667eea;
         }
 
+        /* Dropdown */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-toggle {
+            background: white;
+            border: 2px solid #e2e8f0;
+            color: #4a5568;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .dropdown-toggle:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 0.5rem);
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s;
+        }
+
+        .dropdown.active .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #4a5568;
+            text-decoration: none;
+            transition: background 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .dropdown-menu a:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-menu a:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .dropdown-menu a:hover {
+            background: #f7fafc;
+            color: #667eea;
+        }
+
+        /* User Info */
         .user-info {
             display: flex;
             align-items: center;
             gap: 1rem;
             padding: 0.5rem 1rem;
-            background: rgba(255, 255, 255, 0.1);
+            background: #f7fafc;
             border-radius: 10px;
-            backdrop-filter: blur(10px);
         }
 
         .user-avatar {
-            width: 45px;
-            height: 45px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: 3px solid white;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
         }
 
         .user-details {
@@ -110,42 +170,44 @@
         .user-name {
             font-weight: 600;
             font-size: 0.95rem;
+            color: #2d3748;
         }
 
         .user-role {
             font-size: 0.8rem;
-            opacity: 0.9;
-            font-weight: 400;
+            color: #a0aec0;
         }
 
         .btn-logout {
-            background: rgba(231, 76, 60, 0.9);
-            color: white;
+            background: #fee;
+            color: #c41e3a;
             border: none;
-            padding: 0.6rem 1.2rem;
+            padding: 0.5rem 1rem;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            transition: all 0.3s ease;
+            transition: all 0.2s;
             font-size: 0.9rem;
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .btn-logout:hover {
-            background: rgba(231, 76, 60, 1);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+            background: #fdd;
+            transform: translateY(-1px);
         }
 
-        /* Contenedor principal */
+        /* Main Content */
         .main-content {
             max-width: 1400px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+            min-height: calc(100vh - 140px);
         }
 
-        /* Mensajes flash */
+        /* Flash Messages */
         .flash-messages {
             max-width: 1400px;
             margin: 1rem auto;
@@ -154,41 +216,35 @@
 
         .alert {
             padding: 1rem 1.5rem;
-            border-radius: 10px;
+            border-radius: 8px;
             margin-bottom: 1rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            justify-content: space-between;
             font-weight: 500;
-            animation: slideIn 0.3s ease;
+            animation: slideDown 0.3s ease;
         }
 
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
+            background: #d4f4dd;
+            color: #1e7e34;
             border-left: 4px solid #28a745;
         }
 
         .alert-error {
-            background: #f8d7da;
-            color: #721c24;
+            background: #ffe0e0;
+            color: #c41e3a;
             border-left: 4px solid #dc3545;
         }
 
         .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
+            background: #e6f3ff;
+            color: #0066cc;
             border-left: 4px solid #17a2b8;
         }
 
@@ -198,77 +254,67 @@
             border-left: 4px solid #ffc107;
         }
 
-        /* Cards y contenedores */
-        .card {
-            background: white;
-            border-radius: 15px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .card-header {
-            border-bottom: 2px solid #f0f0f0;
-            padding-bottom: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .card-title {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 0.5rem;
-        }
-
-        .card-subtitle {
-            color: #666;
-            font-size: 1rem;
-            font-weight: 400;
-        }
-
         /* Footer */
         .footer {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
             text-align: center;
-            padding: 2rem;
-            margin-top: 4rem;
+            padding: 1.5rem;
+            margin-top: 3rem;
         }
 
         .footer p {
             margin: 0;
-            font-weight: 500;
+            font-size: 0.9rem;
         }
 
-        /* Responsive */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            .navbar-container {
-                flex-direction: column;
-                align-items: flex-start;
+            .navbar {
+                padding: 0 1rem;
             }
 
-            .navbar-nav {
-                width: 100%;
+            .navbar-container {
+                height: auto;
                 flex-direction: column;
+                padding: 1rem 0;
+                gap: 1rem;
+            }
+
+            .navbar-menu {
+                flex-direction: column;
+                width: 100%;
                 gap: 0.5rem;
             }
 
-            .nav-link {
+            .nav-link, .dropdown-toggle {
                 width: 100%;
-                text-align: center;
+                justify-content: center;
+            }
+
+            .dropdown-menu {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                border: none;
+                margin-top: 0.5rem;
+                display: none;
+            }
+
+            .dropdown.active .dropdown-menu {
+                display: block;
             }
 
             .user-info {
                 width: 100%;
                 justify-content: space-between;
             }
-
-            .card {
-                padding: 1.5rem;
-            }
         }
 
-        /* Utilidades */
+        /* Utilities */
         .text-center { text-align: center; }
         .mt-1 { margin-top: 0.5rem; }
         .mt-2 { margin-top: 1rem; }
@@ -280,39 +326,109 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    <!-- Barra de navegación -->
+    <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-container">
-            <a href="/" class="navbar-brand">📚 Biblioteca Romava</a>
+            <a href="/" class="navbar-brand">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                Biblioteca Romava
+            </a>
 
             {% if current_user.is_authenticated %}
-                <ul class="navbar-nav">
-                    <li><a href="/" class="nav-link">🏠 Inicio</a></li>
-                    <li><a href="/libros" class="nav-link">📖 Libros</a></li>
-                    <li><a href="{{ url_for('autores.listar') }}" class="nav-link">✍️ Autores</a></li>
-                    <li><a href="{{ url_for('clientes.listar') }}" class="nav-link">👥 Clientes</a></li>
-                    <li><a href="{{ url_for('tipos_documentos.listar') }}" class="nav-link">📑 Tipos de Documentos</a></li>
-                </ul>
+                <div class="navbar-menu">
+                    <a href="{{ url_for('main.index') }}" class="nav-link">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        Inicio
+                    </a>
 
-                <div class="user-info">
-                    <div class="user-avatar">
-                        {{ current_user.nombres[0] }}{{ current_user.apellidos[0] }}
+                    <div class="dropdown" id="adminDropdown">
+                        <button class="dropdown-toggle" onclick="toggleDropdown('adminDropdown')">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            Administración
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="{{ url_for('clientes.listar') }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Clientes
+                            </a>
+                            <a href="{{ url_for('autores.listar') }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 20h9"></path>
+                                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                </svg>
+                                Autores
+                            </a>
+                            <a href="/libros">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                                </svg>
+                                Libros
+                            </a>
+                            <a href="{{ url_for('tipos_documentos.listar') }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                Tipos de Documentos
+                            </a>
+                        </div>
                     </div>
-                    <div class="user-details">
-                        <span class="user-name">{{ current_user.nombres }} {{ current_user.apellidos }}</span>
-                        <span class="user-role">{{ current_user.tipo_usuario }}</span>
+
+                    <div class="user-info">
+                        <div class="user-avatar">
+                            {{ current_user.nombres[0] }}{{ current_user.apellidos[0] }}
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name">{{ current_user.nombres }} {{ current_user.apellidos }}</span>
+                            <span class="user-role">{{ current_user.tipo_usuario }}</span>
+                        </div>
+                        <a href="{{ url_for('auth.logout') }}" class="btn-logout">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Salir
+                        </a>
                     </div>
-                    <a href="{{ url_for('auth.logout') }}" class="btn-logout">Cerrar Sesión</a>
                 </div>
             {% else %}
-                <ul class="navbar-nav">
-                    <li><a href="{{ url_for('auth.login') }}" class="nav-link">🔐 Iniciar Sesión</a></li>
-                </ul>
+                <div class="navbar-menu">
+                    <a href="{{ url_for('auth.login') }}" class="nav-link">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+                            <polyline points="10 17 15 12 10 7"></polyline>
+                            <line x1="15" y1="12" x2="3" y2="12"></line>
+                        </svg>
+                        Iniciar Sesión
+                    </a>
+                </div>
             {% endif %}
         </div>
     </nav>
 
-    <!-- Mensajes flash -->
+    <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <div class="flash-messages">
@@ -325,15 +441,37 @@
         {% endif %}
     {% endwith %}
 
-    <!-- Contenido principal -->
+    <!-- Main Content -->
     <main class="main-content">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
     <footer class="footer">
-        <p>© 2025 Biblioteca Romava | Todos los derechos reservados</p>
+        <p>© 2025 Biblioteca Romava | Sistema de Gestión Bibliotecaria</p>
     </footer>
+
+    <script>
+        function toggleDropdown(id) {
+            const dropdown = document.getElementById(id);
+            const allDropdowns = document.querySelectorAll('.dropdown');
+            
+            allDropdowns.forEach(d => {
+                if (d.id !== id) d.classList.remove('active');
+            });
+            
+            dropdown.classList.toggle('active');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(d => {
+                    d.classList.remove('active');
+                });
+            }
+        });
+    </script>
 
     {% block extra_js %}{% endblock %}
 </body>
