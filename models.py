@@ -1,8 +1,8 @@
 from typing import Any, Optional
 import datetime
 import decimal
-
-from sqlalchemy import Boolean, DECIMAL, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, LargeBinary, PrimaryKeyConstraint, String, TEXT, Unicode
+from flask_login import UserMixin
+from sqlalchemy import Boolean, DECIMAL, Date, DateTime, ForeignKeyConstraint, Identity, Index, Integer, LargeBinary, PrimaryKeyConstraint, String, TEXT, Unicode, text
 from sqlalchemy.dialects.mssql import MONEY, TINYINT
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -33,7 +33,7 @@ class Categorias(Base):
         PrimaryKeyConstraint('id_categoria', name='PK_Categorias'),
     )
 
-    id_categoria: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_categoria: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     nombre: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
     descripcion: Mapped[str] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'), nullable=False)
     observaciones: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
@@ -41,52 +41,19 @@ class Categorias(Base):
     Libro_Categoria: Mapped[list['LibroCategoria']] = relationship('LibroCategoria', back_populates='Categorias_')
 
 
-class Clientes(Base):
-    __tablename__ = 'Clientes'
+class EstadoUsuarios(Base):
+    __tablename__ = 'Estado_Usuarios'
     __table_args__ = (
-        PrimaryKeyConstraint('id_cliente', name='PK_Usuarios'),
-
-        
+        PrimaryKeyConstraint('id_estado', name='PK__Estado_U__86989FB271635F0C'),
     )
 
-    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
-    nombres: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
-    apellidos: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
-    email: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255, 'Modern_Spanish_CI_AS'), nullable=False)
-    telefono: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
-    direccion: Mapped[str] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'), nullable=False)
-    tipo_usuario: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
-    fecha_registro: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
-    activo: Mapped[int] = mapped_column(TINYINT, nullable=False)
-    ot: Mapped[int] = mapped_column(TINYINT, nullable=False)
+    id_estado: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    nombre: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
+    permite_login: Mapped[int] = mapped_column(TINYINT, nullable=False, server_default=text('((0))'))
+    descripcion: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
     observaciones: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
 
-    Clientes_Documento: Mapped[list['ClientesDocumento']] = relationship('ClientesDocumento', back_populates='Clientes_')
-    Notificaciones: Mapped[list['Notificaciones']] = relationship('Notificaciones', back_populates='Clientes_')
-    Resenas: Mapped[list['Resenas']] = relationship('Resenas', back_populates='Clientes_')
-    Temas_Foros: Mapped[list['TemasForos']] = relationship('TemasForos', back_populates='Clientes_')
-    Mensajes_Foros: Mapped[list['MensajesForos']] = relationship('MensajesForos', back_populates='Clientes_')
-    Prestamos: Mapped[list['Prestamos']] = relationship('Prestamos', back_populates='Clientes_')
-    Tickets: Mapped[list['Tickets']] = relationship('Tickets', back_populates='Clientes_')
-    Venta: Mapped[list['Venta']] = relationship('Venta', back_populates='Clientes_')
-    Respuesta_Ticket: Mapped[list['RespuestaTicket']] = relationship('RespuestaTicket', back_populates='Clientes_')
-
-    # Métodos requeridos por Flask-Login
-    def get_id(self):
-        return str(self.id_cliente)
-    
-    @property
-    def is_active(self):
-        return bool(self.activo)
-    
-    @property
-    def is_authenticated(self):
-        return True
-    
-    @property
-    def is_anonymous(self):
-        return False
+    Clientes: Mapped[list['Clientes']] = relationship('Clientes', back_populates='Estado_Usuarios')
 
 
 class EstadoVenta(Base):
@@ -109,7 +76,7 @@ class Libros(Base):
         PrimaryKeyConstraint('id_libro', name='PK_Libros'),
     )
 
-    id_libro: Mapped[int] = mapped_column(Integer, primary_key=True,)
+    id_libro: Mapped[int] = mapped_column(Integer, primary_key=True)
     isbn: Mapped[str] = mapped_column(String(13, 'Modern_Spanish_CI_AS'), nullable=False)
     titulo: Mapped[str] = mapped_column(String(255, 'Modern_Spanish_CI_AS'), nullable=False)
     formato: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
@@ -127,8 +94,8 @@ class Libros(Base):
     Inventarios: Mapped[list['Inventarios']] = relationship('Inventarios', back_populates='Libros_')
     Libro_Autores: Mapped[list['LibroAutores']] = relationship('LibroAutores', back_populates='Libros_')
     Libro_Categoria: Mapped[list['LibroCategoria']] = relationship('LibroCategoria', back_populates='Libros_')
-    Resenas: Mapped[list['Resenas']] = relationship('Resenas', back_populates='Libros_')
     Libro_Editoriales: Mapped[list['LibroEditoriales']] = relationship('LibroEditoriales', back_populates='Libros_')
+    Resenas: Mapped[list['Resenas']] = relationship('Resenas', back_populates='Libros_')
     Detalle_Venta: Mapped[list['DetalleVenta']] = relationship('DetalleVenta', back_populates='Libros_')
     Detalles_Prestamos: Mapped[list['DetallesPrestamos']] = relationship('DetallesPrestamos', back_populates='Libros_')
 
@@ -212,24 +179,48 @@ class Sysdiagrams(Base):
     definition: Mapped[Optional[bytes]] = mapped_column(LargeBinary)
 
 
-class ClientesDocumento(Base):
-    __tablename__ = 'Clientes_Documento'
+class Clientes(Base, UserMixin):
+    __tablename__ = 'Clientes'
     __table_args__ = (
-        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Clientes_Documento_Clientes'),
-        ForeignKeyConstraint(['id_tipo_documento'], ['Tipos_Documentos.id_tipo_documento'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Clientes_Documento_Tipos_Documentos'),
-        PrimaryKeyConstraint('id_cliente_documento', name='PK_Clientes_Documento'),
-        Index('IXFK_Clientes_Documento_Clientes', 'id_cliente'),
-        Index('IXFK_Clientes_Documento_Tipos_Documentos', 'id_tipo_documento')
+        ForeignKeyConstraint(['id_estado'], ['Estado_Usuarios.id_estado'], name='FK_Clientes_Estado_Usuarios'),
+        PrimaryKeyConstraint('id_cliente', name='PK_Usuarios')
     )
 
-    id_cliente_documento: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_tipo_documento: Mapped[int] = mapped_column(Integer, nullable=False)
-    valor_documento: Mapped[str] = mapped_column(Unicode(50, 'Modern_Spanish_CI_AS'), nullable=False)
+    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    nombres: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
+    apellidos: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
+    email: Mapped[str] = mapped_column(String(100, 'Modern_Spanish_CI_AS'), nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255, 'Modern_Spanish_CI_AS'), nullable=False)
+    telefono: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
+    direccion: Mapped[str] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'), nullable=False)
+    tipo_usuario: Mapped[str] = mapped_column(String(50, 'Modern_Spanish_CI_AS'), nullable=False)
+    fecha_registro: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    ot: Mapped[int] = mapped_column(TINYINT, nullable=False)
+    id_estado: Mapped[int] = mapped_column(Integer, nullable=False)
+    observaciones: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
 
-    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Clientes_Documento')
-    Tipos_Documentos: Mapped['TiposDocumentos'] = relationship('TiposDocumentos', back_populates='Clientes_Documento')
+    Estado_Usuarios: Mapped['EstadoUsuarios'] = relationship('EstadoUsuarios', back_populates='Clientes')
+    Clientes_Documento: Mapped[list['ClientesDocumento']] = relationship('ClientesDocumento', back_populates='Clientes_')
+    Notificaciones: Mapped[list['Notificaciones']] = relationship('Notificaciones', back_populates='Clientes_')
+    Prestamos: Mapped[list['Prestamos']] = relationship('Prestamos', back_populates='Clientes_')
+    Resenas: Mapped[list['Resenas']] = relationship('Resenas', back_populates='Clientes_')
+    Temas_Foros: Mapped[list['TemasForos']] = relationship('TemasForos', back_populates='Clientes_')
+    Tickets: Mapped[list['Tickets']] = relationship('Tickets', back_populates='Clientes_')
+    Venta: Mapped[list['Venta']] = relationship('Venta', back_populates='Clientes_')
+    Mensajes_Foros: Mapped[list['MensajesForos']] = relationship('MensajesForos', back_populates='Clientes_')
+    Respuesta_Ticket: Mapped[list['RespuestaTicket']] = relationship('RespuestaTicket', back_populates='Clientes_')
 
+    # Flask-Login required methods
+    def get_id(self):
+        """Return the user ID as a string"""
+        return str(self.id_cliente)
+    
+    @property
+    def is_active(self):
+        """Check if user is active based on estado"""
+        if hasattr(self, 'Estado_Usuarios') and self.Estado_Usuarios:
+            return self.Estado_Usuarios.permite_login
+        return False  # Remove the fallback: self.activo == 1
 
 class Editoriales(Base):
     __tablename__ = 'Editoriales'
@@ -340,13 +331,70 @@ class LibroCategoria(Base):
         Index('IXFK_Libro_Categoria_Libros', 'id_libro')
     )
 
-    id_libro_categoria: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_libro_categoria: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
     id_categoria: Mapped[int] = mapped_column(Integer, nullable=False)
     id_libro: Mapped[int] = mapped_column(Integer, nullable=False)
     descripcion: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
 
     Categorias_: Mapped['Categorias'] = relationship('Categorias', back_populates='Libro_Categoria')
     Libros_: Mapped['Libros'] = relationship('Libros', back_populates='Libro_Categoria')
+
+
+class ClientesDocumento(Base):
+    __tablename__ = 'Clientes_Documento'
+    __table_args__ = (
+        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Clientes_Documento_Clientes'),
+        ForeignKeyConstraint(['id_tipo_documento'], ['Tipos_Documentos.id_tipo_documento'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Clientes_Documento_Tipos_Documentos'),
+        PrimaryKeyConstraint('id_cliente_documento', name='PK_Clientes_Documento'),
+        Index('IXFK_Clientes_Documento_Clientes', 'id_cliente'),
+        Index('IXFK_Clientes_Documento_Tipos_Documentos', 'id_tipo_documento')
+    )
+
+    id_cliente_documento: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_tipo_documento: Mapped[int] = mapped_column(Integer, nullable=False)
+    valor_documento: Mapped[str] = mapped_column(Unicode(50, 'Modern_Spanish_CI_AS'), nullable=False)
+
+    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Clientes_Documento')
+    Tipos_Documentos: Mapped['TiposDocumentos'] = relationship('TiposDocumentos', back_populates='Clientes_Documento')
+
+
+class EmpleadosDocumento(Base):
+    __tablename__ = 'Empleados_Documento'
+    __table_args__ = (
+        ForeignKeyConstraint(['id_empleado'], ['Empleados.id_empleado'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Empleados_Documento_Empleados'),
+        ForeignKeyConstraint(['id_tipo_documento'], ['Tipos_Documentos.id_tipo_documento'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Empleados_Documento_Tipos_Documentos'),
+        PrimaryKeyConstraint('id_empleado_documento', name='PK_Empleados_Documento'),
+        Index('IXFK_Empleados_Documento_Empleados', 'id_empleado'),
+        Index('IXFK_Empleados_Documento_Tipos_Documentos', 'id_tipo_documento')
+    )
+
+    id_empleado_documento: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_empleado: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_tipo_documento: Mapped[int] = mapped_column(Integer, nullable=False)
+    valor_documento: Mapped[str] = mapped_column(Unicode(50, 'Modern_Spanish_CI_AS'), nullable=False)
+
+    Empleados_: Mapped['Empleados'] = relationship('Empleados', back_populates='Empleados_Documento')
+    Tipos_Documentos: Mapped['TiposDocumentos'] = relationship('TiposDocumentos', back_populates='Empleados_Documento')
+
+
+class LibroEditoriales(Base):
+    __tablename__ = 'Libro_Editoriales'
+    __table_args__ = (
+        ForeignKeyConstraint(['id_editorial'], ['Editoriales.id_editorial'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Libro_Editoriales_Editoriales'),
+        ForeignKeyConstraint(['id_libro'], ['Libros.id_libro'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Libro_Editoriales_Libros'),
+        PrimaryKeyConstraint('id_libros_editoriales', name='PK_Libro_Editoriales'),
+        Index('IXFK_Libro_Editoriales_Editoriales', 'id_editorial'),
+        Index('IXFK_Libro_Editoriales_Libros', 'id_libro')
+    )
+
+    id_libros_editoriales: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_editorial: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_libro: Mapped[int] = mapped_column(Integer, nullable=False)
+    descripcion: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
+
+    Editoriales_: Mapped['Editoriales'] = relationship('Editoriales', back_populates='Libro_Editoriales')
+    Libros_: Mapped['Libros'] = relationship('Libros', back_populates='Libro_Editoriales')
 
 
 class Notificaciones(Base):
@@ -366,6 +414,30 @@ class Notificaciones(Base):
     fecha_envio: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
 
     Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Notificaciones')
+
+
+class Prestamos(Base):
+    __tablename__ = 'Prestamos'
+    __table_args__ = (
+        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], name='FK_Prestamos_Clientes'),
+        ForeignKeyConstraint(['id_empleado'], ['Empleados.id_empleado'], name='FK_Prestamos_Empleados'),
+        PrimaryKeyConstraint('id_prestamo', name='PK_Prestamos'),
+        Index('IXFK_Prestamos_Clientes', 'id_cliente'),
+        Index('IXFK_Prestamos_Empleados', 'id_empleado')
+    )
+
+    id_prestamo: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_empleado: Mapped[int] = mapped_column(Integer, nullable=False)
+    fecha_prestamo: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    fecha_devolucion_estimada: Mapped[datetime.date] = mapped_column(Date, nullable=False)
+    estado: Mapped[str] = mapped_column(String(200, 'Modern_Spanish_CI_AS'), nullable=False)
+    fecha_devolucion_real: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+    observaciones: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
+
+    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Prestamos')
+    Empleados_: Mapped['Empleados'] = relationship('Empleados', back_populates='Prestamos')
+    Detalles_Prestamos: Mapped[list['DetallesPrestamos']] = relationship('DetallesPrestamos', back_populates='Prestamos_')
 
 
 class Resenas(Base):
@@ -411,95 +483,6 @@ class TemasForos(Base):
 
     Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Temas_Foros')
     Mensajes_Foros: Mapped[list['MensajesForos']] = relationship('MensajesForos', back_populates='Temas_Foros')
-
-
-class EmpleadosDocumento(Base):
-    __tablename__ = 'Empleados_Documento'
-    __table_args__ = (
-        ForeignKeyConstraint(['id_empleado'], ['Empleados.id_empleado'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Empleados_Documento_Empleados'),
-        ForeignKeyConstraint(['id_tipo_documento'], ['Tipos_Documentos.id_tipo_documento'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Empleados_Documento_Tipos_Documentos'),
-        PrimaryKeyConstraint('id_empleado_documento', name='PK_Empleados_Documento'),
-        Index('IXFK_Empleados_Documento_Empleados', 'id_empleado'),
-        Index('IXFK_Empleados_Documento_Tipos_Documentos', 'id_tipo_documento')
-    )
-
-    id_empleado_documento: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_empleado: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_tipo_documento: Mapped[int] = mapped_column(Integer, nullable=False)
-    valor_documento: Mapped[str] = mapped_column(Unicode(50, 'Modern_Spanish_CI_AS'), nullable=False)
-
-    Empleados_: Mapped['Empleados'] = relationship('Empleados', back_populates='Empleados_Documento')
-    Tipos_Documentos: Mapped['TiposDocumentos'] = relationship('TiposDocumentos', back_populates='Empleados_Documento')
-
-
-class LibroEditoriales(Base):
-    __tablename__ = 'Libro_Editoriales'
-    __table_args__ = (
-        ForeignKeyConstraint(['id_editorial'], ['Editoriales.id_editorial'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Libro_Editoriales_Editoriales'),
-        ForeignKeyConstraint(['id_libro'], ['Libros.id_libro'], ondelete='CASCADE', onupdate='CASCADE', name='FK_Libro_Editoriales_Libros'),
-        PrimaryKeyConstraint('id_libros_editoriales', name='PK_Libro_Editoriales'),
-        Index('IXFK_Libro_Editoriales_Editoriales', 'id_editorial'),
-        Index('IXFK_Libro_Editoriales_Libros', 'id_libro')
-    )
-
-    id_libros_editoriales: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_editorial: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_libro: Mapped[int] = mapped_column(Integer, nullable=False)
-    descripcion: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
-
-    Editoriales_: Mapped['Editoriales'] = relationship('Editoriales', back_populates='Libro_Editoriales')
-    Libros_: Mapped['Libros'] = relationship('Libros', back_populates='Libro_Editoriales')
-
-
-class MensajesForos(Base):
-    __tablename__ = 'Mensajes_Foros'
-    __table_args__ = (
-        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], name='FK_Mensajes_Foros_Clientes'),
-        ForeignKeyConstraint(['id_mensaje_padre'], ['Mensajes_Foros.id_mensaje'], name='FK_Mensaje_Foro_Mensaje_Foro'),
-        ForeignKeyConstraint(['id_tema'], ['Temas_Foros.id_tema'], name='FK_Mensajes_Foros_Temas'),
-        PrimaryKeyConstraint('id_mensaje', name='PK_Mensaje_Foro'),
-        Index('IXFK_Mensaje_Foro_Mensaje_Foro', 'id_mensaje_padre'),
-        Index('IXFK_Mensajes_Foros_Clientes', 'id_cliente'),
-        Index('IXFK_Mensajes_Foros_Temas', 'id_tema')
-    )
-
-    id_mensaje: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_tema: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
-    contenido: Mapped[str] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'), nullable=False)
-    fecha_publicacion: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
-    visible: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    id_mensaje_padre: Mapped[Optional[int]] = mapped_column(Integer)
-    fecha_edicion: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-
-    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Mensajes_Foros')
-    Mensajes_Foros: Mapped[Optional['MensajesForos']] = relationship('MensajesForos', remote_side=[id_mensaje], back_populates='Mensajes_Foros_reverse')
-    Mensajes_Foros_reverse: Mapped[list['MensajesForos']] = relationship('MensajesForos', remote_side=[id_mensaje_padre], back_populates='Mensajes_Foros')
-    Temas_Foros: Mapped['TemasForos'] = relationship('TemasForos', back_populates='Mensajes_Foros')
-
-
-class Prestamos(Base):
-    __tablename__ = 'Prestamos'
-    __table_args__ = (
-        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], name='FK_Prestamos_Clientes'),
-        ForeignKeyConstraint(['id_empleado'], ['Empleados.id_empleado'], name='FK_Prestamos_Empleados'),
-        PrimaryKeyConstraint('id_prestamo', name='PK_Prestamos'),
-        Index('IXFK_Prestamos_Clientes', 'id_cliente'),
-        Index('IXFK_Prestamos_Empleados', 'id_empleado')
-    )
-
-    id_prestamo: Mapped[int] = mapped_column(Integer, primary_key=True)
-    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
-    id_empleado: Mapped[int] = mapped_column(Integer, nullable=False)
-    fecha_prestamo: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
-    fecha_devolucion_estimada: Mapped[datetime.date] = mapped_column(Date, nullable=False)
-    estado: Mapped[str] = mapped_column(String(200, 'Modern_Spanish_CI_AS'), nullable=False)
-    fecha_devolucion_real: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
-    observaciones: Mapped[Optional[str]] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'))
-
-    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Prestamos')
-    Empleados_: Mapped['Empleados'] = relationship('Empleados', back_populates='Prestamos')
-    Detalles_Prestamos: Mapped[list['DetallesPrestamos']] = relationship('DetallesPrestamos', back_populates='Prestamos_')
 
 
 class Tickets(Base):
@@ -634,6 +617,33 @@ class FacturasSar(Base):
 
     Sucursales_: Mapped['Sucursales'] = relationship('Sucursales', back_populates='Facturas_Sar')
     Venta_: Mapped['Venta'] = relationship('Venta', back_populates='Facturas_Sar')
+
+
+class MensajesForos(Base):
+    __tablename__ = 'Mensajes_Foros'
+    __table_args__ = (
+        ForeignKeyConstraint(['id_cliente'], ['Clientes.id_cliente'], name='FK_Mensajes_Foros_Clientes'),
+        ForeignKeyConstraint(['id_mensaje_padre'], ['Mensajes_Foros.id_mensaje'], name='FK_Mensaje_Foro_Mensaje_Foro'),
+        ForeignKeyConstraint(['id_tema'], ['Temas_Foros.id_tema'], name='FK_Mensajes_Foros_Temas'),
+        PrimaryKeyConstraint('id_mensaje', name='PK_Mensaje_Foro'),
+        Index('IXFK_Mensaje_Foro_Mensaje_Foro', 'id_mensaje_padre'),
+        Index('IXFK_Mensajes_Foros_Clientes', 'id_cliente'),
+        Index('IXFK_Mensajes_Foros_Temas', 'id_tema')
+    )
+
+    id_mensaje: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_tema: Mapped[int] = mapped_column(Integer, nullable=False)
+    id_cliente: Mapped[int] = mapped_column(Integer, nullable=False)
+    contenido: Mapped[str] = mapped_column(TEXT(2147483647, 'Modern_Spanish_CI_AS'), nullable=False)
+    fecha_publicacion: Mapped[datetime.datetime] = mapped_column(DateTime, nullable=False)
+    visible: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    id_mensaje_padre: Mapped[Optional[int]] = mapped_column(Integer)
+    fecha_edicion: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime)
+
+    Clientes_: Mapped['Clientes'] = relationship('Clientes', back_populates='Mensajes_Foros')
+    Mensajes_Foros: Mapped[Optional['MensajesForos']] = relationship('MensajesForos', remote_side=[id_mensaje], back_populates='Mensajes_Foros_reverse')
+    Mensajes_Foros_reverse: Mapped[list['MensajesForos']] = relationship('MensajesForos', remote_side=[id_mensaje_padre], back_populates='Mensajes_Foros')
+    Temas_Foros: Mapped['TemasForos'] = relationship('TemasForos', back_populates='Mensajes_Foros')
 
 
 class RespuestaTicket(Base):

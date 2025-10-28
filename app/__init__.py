@@ -30,12 +30,14 @@ def create_app():
     from app.routes.clientes import clientes_bp
     from app.routes.autores import autores_bp
     from app.routes.tipos_documentos import tipos_documentos_bp
+    from app.routes.categorias import categorias_bp
     
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(clientes_bp)
     app.register_blueprint(autores_bp)
     app.register_blueprint(tipos_documentos_bp)
+    app.register_blueprint(categorias_bp)
     
     return app
 

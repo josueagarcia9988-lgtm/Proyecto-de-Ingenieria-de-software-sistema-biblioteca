@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
 from app import db
-from models import Clientes
+from models import Clientes, EstadoUsuarios
 from bcrypt import hashpw, gensalt
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 import re
 import secrets
 import string
@@ -38,7 +39,6 @@ def validar_telefono(telefono):
     """Validar formato de teléfono"""
     if not telefono or telefono == 'No especificado':
         return True, None
-    # Permitir formatos: 9999-9999, +504 9999-9999, etc.
     pattern = r'^[\d\s\-\+\(\)]{8,20}$'
     if not re.match(pattern, telefono):
         return False, 'Formato de teléfono inválido (ej: 9999-9999)'
@@ -65,13 +65,18 @@ def get_next_id():
 @clientes_bp.route('/')
 @login_required
 def listar():
-    clientes = db.session.query(Clientes).order_by(Clientes.fecha_registro.desc()).all()
+    # Use joinedload to eagerly load the Estado_Usuarios relationship
+    clientes = db.session.query(Clientes).options(
+        joinedload(Clientes.Estado_Usuarios)
+    ).order_by(Clientes.fecha_registro.desc()).all()
     return render_template('clientes/listar.html', clientes=clientes)
 
 # CREATE - Mostrar formulario de creación
 @clientes_bp.route('/nuevo', methods=['GET', 'POST'])
 @login_required
 def crear():
+    estados = db.session.query(EstadoUsuarios).all()
+    
     if request.method == 'POST':
         try:
             nombres = request.form.get('nombres', '').strip()
@@ -84,19 +89,19 @@ def crear():
             valido, error = validar_solo_letras(nombres, 'Nombres')
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Validar apellidos
             valido, error = validar_solo_letras(apellidos, 'Apellidos')
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Validar email
             valido, error = validar_email(email)
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Verificar email duplicado
             email_existe = db.session.query(Clientes).filter(
@@ -104,19 +109,19 @@ def crear():
             ).first()
             if email_existe:
                 flash('Este email ya está registrado.', 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Validar teléfono
             valido, error = validar_telefono(telefono)
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Validar contraseña
             valido, error = validar_password(password)
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html')
+                return render_template('clientes/form.html', cliente=None, estados=estados)
             
             # Crear cliente
             nuevo_id = get_next_id()
@@ -124,17 +129,18 @@ def crear():
             
             nuevo_cliente = Clientes(
                 id_cliente=nuevo_id,
-                nombres=nombres.title(),  # Capitalizar nombres
-                apellidos=apellidos.title(),  # Capitalizar apellidos
+                nombres=nombres.title(),
+                apellidos=apellidos.title(),
                 email=email,
                 password_hash=password_hash,
                 telefono=telefono if telefono else 'No especificado',
                 direccion=request.form.get('direccion', '').strip() or 'No especificada',
                 tipo_usuario=request.form.get('tipo_usuario', 'cliente'),
                 fecha_registro=datetime.now(),
-                activo=int(request.form.get('activo', 1)),
+                activo=1,
+                id_estado=int(request.form.get('id_estado', 1)),
                 ot=int(request.form.get('ot', 0)),
-                observaciones=request.form.get('observaciones', '').strip()
+                observaciones=request.form.get('observaciones', '').strip() or None
             )
             
             db.session.add(nuevo_cliente)
@@ -147,13 +153,18 @@ def crear():
             db.session.rollback()
             flash(f'Error al crear cliente: {str(e)}', 'error')
     
-    return render_template('clientes/form.html', cliente=None)
+    return render_template('clientes/form.html', cliente=None, estados=estados)
 
 # UPDATE - Mostrar formulario de edición
 @clientes_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar(id):
-    cliente = db.session.get(Clientes, id)
+    estados = db.session.query(EstadoUsuarios).all()
+    # Use joinedload to eagerly load the Estado_Usuarios relationship
+    cliente = db.session.query(Clientes).options(
+        joinedload(Clientes.Estado_Usuarios)
+    ).filter(Clientes.id_cliente == id).first()
+    
     if not cliente:
         flash('Cliente no encontrado.', 'error')
         return redirect(url_for('clientes.listar'))
@@ -168,29 +179,29 @@ def editar(id):
             valido, error = validar_solo_letras(nombres, 'Nombres')
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html', cliente=cliente)
+                return render_template('clientes/form.html', cliente=cliente, estados=estados)
             
             # Validar apellidos
             valido, error = validar_solo_letras(apellidos, 'Apellidos')
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html', cliente=cliente)
+                return render_template('clientes/form.html', cliente=cliente, estados=estados)
             
             # Validar teléfono
             valido, error = validar_telefono(telefono)
             if not valido:
                 flash(error, 'error')
-                return render_template('clientes/form.html', cliente=cliente)
+                return render_template('clientes/form.html', cliente=cliente, estados=estados)
             
-            # Actualizar datos (NO incluye contraseña)
+            # Actualizar datos
             cliente.nombres = nombres.title()
             cliente.apellidos = apellidos.title()
             cliente.telefono = telefono if telefono else 'No especificado'
             cliente.direccion = request.form.get('direccion', '').strip() or 'No especificada'
             cliente.tipo_usuario = request.form.get('tipo_usuario', 'cliente')
-            cliente.activo = int(request.form.get('activo', 1))
+            cliente.id_estado = int(request.form.get('id_estado', 1))
             cliente.ot = int(request.form.get('ot', 0))
-            cliente.observaciones = request.form.get('observaciones', '').strip()
+            cliente.observaciones = request.form.get('observaciones', '').strip() or None
             
             db.session.commit()
             flash(f'Cliente {nombres} {apellidos} actualizado exitosamente.', 'success')
@@ -200,7 +211,7 @@ def editar(id):
             db.session.rollback()
             flash(f'Error al actualizar cliente: {str(e)}', 'error')
     
-    return render_template('clientes/form.html', cliente=cliente)
+    return render_template('clientes/form.html', cliente=cliente, estados=estados)
 
 # DELETE - Eliminar cliente
 @clientes_bp.route('/eliminar/<int:id>', methods=['POST'])
@@ -220,7 +231,7 @@ def eliminar(id):
         nombre_completo = f'{cliente.nombres} {cliente.apellidos}'
         db.session.delete(cliente)
         db.session.commit()
-        flash(f'Cliente {nombre_completo} eliminado exitosamente.', 'error')  # ← RED notification
+        flash(f'Cliente {nombre_completo} eliminado exitosamente.', 'error')
         
     except Exception as e:
         db.session.rollback()
@@ -228,6 +239,7 @@ def eliminar(id):
     
     return redirect(url_for('clientes.listar'))
 
+# RESET PASSWORD
 @clientes_bp.route('/resetear-password/<int:id>', methods=['POST'])
 @login_required
 def resetear_password(id):
@@ -237,16 +249,18 @@ def resetear_password(id):
             flash('Cliente no encontrado.', 'error')
             return redirect(url_for('clientes.listar'))
         
-        # Generate random password (8 characters: letters + numbers)
+        # Generate random password
         temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
         
         # Hash the temporary password
         cliente.password_hash = hashpw(temp_password.encode('utf-8'), gensalt()).decode('utf-8')
         
+        # Optionally set estado to "Pendiente cambio de contraseña"
+        # cliente.id_estado = 4
+        
         db.session.commit()
         
-        # Show the temporary password to admin (they should share it with user)
-        flash(f'Contraseña temporal para {cliente.nombres}: {temp_password} (Enviado al correo del Usuario)', 'warning')
+        flash(f'Contraseña temporal para {cliente.nombres}: {temp_password} (Comparte esta contraseña con el usuario)', 'warning')
         
     except Exception as e:
         db.session.rollback()

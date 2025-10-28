@@ -75,7 +75,7 @@
             <tbody id="tableBody">
                 {% for cliente in clientes %}
                 <tr data-search="{{ (cliente.nombres + ' ' + cliente.apellidos + ' ' + cliente.email + ' ' + cliente.telefono)|lower }}"
-                    data-status="{{ 'active' if cliente.activo else 'inactive' }}"
+                    data-status="{{ 'active' if cliente.id_estado == 1 else 'inactive' }}"
                     data-type="{{ cliente.tipo_usuario }}">
                     <td>
                         <div class="client-info">
@@ -90,15 +90,20 @@
                     <td>{{ cliente.telefono }}</td>
                     <td><span class="badge badge-type">{{ cliente.tipo_usuario }}</span></td>
                     <td>
-                        {% if cliente.activo %}
-                        <span class="badge badge-active">Activo</span>
+                        {% set estado_obj = cliente.Estado_Usuarios or estados_dict.get(cliente.id_estado) %}
+                        {% if cliente.id_estado == 1 %}
+                            <span class="badge badge-active">{{ estado_obj.nombre if estado_obj else 'Activo' }}</span>
+                        {% elif cliente.id_estado == 4 %}
+                            <span class="badge badge-warning">{{ estado_obj.nombre if estado_obj else 'Pendiente' }}</span>
                         {% else %}
-                        <span class="badge badge-inactive">Inactivo</span>
+                            <span class="badge badge-inactive">{{ estado_obj.nombre if estado_obj else 'Inactivo' }}</span>
                         {% endif %}
                     </td>
                     <td>
                         <div class="actions">
-                            <button class="action-btn view" onclick='showDetails({{ cliente.id_cliente }}, "{{ cliente.nombres }}", "{{ cliente.apellidos }}", "{{ cliente.email }}", "{{ cliente.telefono }}", "{{ cliente.tipo_usuario }}", {{ cliente.activo|tojson }}, "{{ cliente.fecha_registro.strftime('%Y-%m-%d') }}", "{{ cliente.direccion }}", "{{ cliente.observaciones }}")' title="Ver detalles">
+                            {% set estado_obj = cliente.Estado_Usuarios or estados_dict.get(cliente.id_estado) %}
+                            <button class="action-btn view" title="Ver detalles"
+                                onclick='showDetails({{ cliente.id_cliente }}, "{{ cliente.nombres }}", "{{ cliente.apellidos }}", "{{ cliente.email }}", "{{ cliente.telefono }}", "{{ cliente.tipo_usuario }}", "{{ cliente.fecha_registro }}", "{{ cliente.direccion }}", "{{ cliente.observaciones or '' }}", {{ cliente.id_estado }}, "{{ estado_obj.nombre if estado_obj else 'Sin estado' }}")'>
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                     <circle cx="12" cy="12" r="3"></circle>
@@ -220,6 +225,7 @@
 .badge-type { background: #e6f3ff; color: #0066cc; }
 .badge-active { background: #d4f4dd; color: #1e7e34; }
 .badge-inactive { background: #ffe0e0; color: #c41e3a; }
+.badge-warning { background: #fff3cd; color: #856404; }
 
 .actions { display: flex; gap: 0.5rem; }
 .action-btn { width: 36px; height: 36px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; text-decoration: none; }
@@ -315,14 +321,15 @@ searchInput.addEventListener('input', applyFilters);
 statusFilter.addEventListener('change', applyFilters);
 typeFilter.addEventListener('change', applyFilters);
 
-function showDetails(id, nombres, apellidos, email, telefono, tipo, activo, fecha, direccion, observaciones) {
+function showDetails(id, nombres, apellidos, email, telefono, tipo, fecha, direccion, observaciones, idEstado, estadoNombre) {
     document.getElementById('dId').textContent = '#' + id;
     document.getElementById('dNombres').textContent = nombres;
     document.getElementById('dApellidos').textContent = apellidos;
     document.getElementById('dEmail').textContent = email;
     document.getElementById('dTelefono').textContent = telefono;
     document.getElementById('dTipo').textContent = tipo;
-    document.getElementById('dEstado').innerHTML = activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>';
+    document.getElementById('dEstado').innerHTML = 
+        `<span class="badge ${idEstado == 1 ? 'badge-active' : idEstado == 4 ? 'badge-warning' : 'badge-inactive'}">${estadoNombre}</span>`;
     document.getElementById('dFecha').textContent = new Date(fecha).toLocaleDateString('es-HN');
     document.getElementById('dDireccion').textContent = direccion || 'No especificada';
     document.getElementById('dObs').textContent = observaciones || 'Sin observaciones';
