@@ -102,21 +102,8 @@
                               placeholder="Ej: Col. Palmira, Calle Principal">{{ cliente.direccion if cliente and cliente.direccion != 'No especificada' else '' }}</textarea>
                 </div>
 
-                <!-- Contraseña (solo para nuevos clientes) -->
-                {% if not cliente %}
-                <div class="form-group full-width">
-                    <label for="password">Contraseña <span class="required">*</span></label>
-                    <input type="password" 
-                           id="password" 
-                           name="password" 
-                           class="form-input"
-                           minlength="6"
-                           maxlength="100"
-                           required
-                           placeholder="Mínimo 6 caracteres">
-                    <small class="form-hint">La contraseña debe tener entre 6 y 100 caracteres</small>
-                </div>
-                {% else %}
+                <!-- Gestión de Contraseña -->
+                {% if cliente %}
                 <div class="form-group full-width">
                     <label>Gestión de Contraseña</label>
                     <div class="password-reset-section">
@@ -139,6 +126,20 @@
                         </button>
                     </div>
                 </div>
+                {% else %}
+                <div class="form-group full-width">
+                    <div class="password-info-box">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <div>
+                            <p class="info-text">Se generará automáticamente una contraseña temporal</p>
+                            <small class="form-hint">La contraseña se mostrará después de crear el usuario para que puedas compartirla</small>
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
 
                 <!-- Estado -->
@@ -148,7 +149,7 @@
                         {% for estado in estados %}
                         <option value="{{ estado.id_estado }}" 
                                 {{ 'selected' if cliente and cliente.id_estado == estado.id_estado else ('selected' if not cliente and estado.id_estado == 1 else '') }}>
-                            {{ estado.nombre}}
+                            {{ estado.nombre }}
                         </option>
                         {% endfor %}
                     </select>

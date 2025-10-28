@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
+from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
 from app import db
 from models import Clientes, EstadoUsuarios
@@ -9,8 +9,45 @@ from sqlalchemy.orm import joinedload
 import re
 import secrets
 import string
+import hmac
+import hashlib
 
 clientes_bp = Blueprint('clientes', __name__, url_prefix='/clientes')
+
+def hash_password(password):
+    """
+    Hash de contraseña completamente aleatorio y único:
+    1. Genera una sal aleatoria única de 32 bytes
+    2. HMAC con pepper + sal
+    3. Bcrypt
+    4. Almacena: sal_aleatoria + hash (todo en hex)
+    Resultado: Cada hash comienza diferente
+    """
+    # Obtener pepper desde configuración
+    try:
+        pepper = current_app.config.get('PEPPER_SECRET', '')
+    except RuntimeError:
+        from config import Config
+        pepper = Config.PEPPER_SECRET
+    
+    # Generar sal aleatoria única de 32 bytes
+    random_salt = secrets.token_bytes(32)
+    
+    # HMAC con pepper + sal aleatoria
+    hmac_hash = hmac.new(
+        (pepper + random_salt.hex()).encode('utf-8'),
+        password.encode('utf-8'),
+        hashlib.sha256
+    ).digest()
+    
+    # Bcrypt sobre el HMAC
+    bcrypt_hash = hashpw(hmac_hash, gensalt(rounds=12))
+    
+    # Combinar: sal_aleatoria + bcrypt_hash, todo en hexadecimal
+    # La sal aleatoria va primero (64 caracteres hex = 32 bytes)
+    final_hash = random_salt.hex() + bcrypt_hash.hex()
+    
+    return final_hash
 
 def validar_solo_letras(texto, campo):
     """Validar que un campo solo contenga letras y espacios"""
@@ -69,7 +106,12 @@ def listar():
     clientes = db.session.query(Clientes).options(
         joinedload(Clientes.Estado_Usuarios)
     ).order_by(Clientes.fecha_registro.desc()).all()
-    return render_template('clientes/listar.html', clientes=clientes)
+    
+    # Create a dictionary of estados for easy lookup
+    estados = db.session.query(EstadoUsuarios).all()
+    estados_dict = {estado.id_estado: estado for estado in estados}
+    
+    return render_template('clientes/listar.html', clientes=clientes, estados_dict=estados_dict)
 
 # CREATE - Mostrar formulario de creación
 @clientes_bp.route('/nuevo', methods=['GET', 'POST'])
@@ -83,7 +125,6 @@ def crear():
             apellidos = request.form.get('apellidos', '').strip()
             email = request.form.get('email', '').strip().lower()
             telefono = request.form.get('telefono', '').strip()
-            password = request.form.get('password', '')
             
             # Validar nombres
             valido, error = validar_solo_letras(nombres, 'Nombres')
@@ -117,15 +158,14 @@ def crear():
                 flash(error, 'error')
                 return render_template('clientes/form.html', cliente=None, estados=estados)
             
-            # Validar contraseña
-            valido, error = validar_password(password)
-            if not valido:
-                flash(error, 'error')
-                return render_template('clientes/form.html', cliente=None, estados=estados)
+            # Generar contraseña temporal automáticamente (más segura)
+            # Incluye mayúsculas, minúsculas, dígitos y símbolos
+            chars = string.ascii_letters + string.digits + '!@#$%'
+            temp_password = ''.join(secrets.choice(chars) for _ in range(10))
             
-            # Crear cliente
+            # Crear cliente con el método de hash personalizado
             nuevo_id = get_next_id()
-            password_hash = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
+            password_hash = hash_password(temp_password)
             
             nuevo_cliente = Clientes(
                 id_cliente=nuevo_id,
@@ -137,7 +177,6 @@ def crear():
                 direccion=request.form.get('direccion', '').strip() or 'No especificada',
                 tipo_usuario=request.form.get('tipo_usuario', 'cliente'),
                 fecha_registro=datetime.now(),
-                activo=1,
                 id_estado=int(request.form.get('id_estado', 1)),
                 ot=int(request.form.get('ot', 0)),
                 observaciones=request.form.get('observaciones', '').strip() or None
@@ -146,12 +185,13 @@ def crear():
             db.session.add(nuevo_cliente)
             db.session.commit()
             
-            flash(f'Cliente {nombres} {apellidos} creado exitosamente.', 'success')
+            flash(f'Cliente {nombres} {apellidos} creado exitosamente. Contraseña temporal: {temp_password} (Comparte esta contraseña con el usuario)', 'success')
             return redirect(url_for('clientes.listar'))
             
         except Exception as e:
             db.session.rollback()
             flash(f'Error al crear cliente: {str(e)}', 'error')
+            print(f"Error en crear cliente: {str(e)}")
     
     return render_template('clientes/form.html', cliente=None, estados=estados)
 
@@ -249,11 +289,12 @@ def resetear_password(id):
             flash('Cliente no encontrado.', 'error')
             return redirect(url_for('clientes.listar'))
         
-        # Generate random password
-        temp_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+        # Generate random password (más segura con caracteres especiales)
+        chars = string.ascii_letters + string.digits + '!@#$%'
+        temp_password = ''.join(secrets.choice(chars) for _ in range(10))
         
-        # Hash the temporary password
-        cliente.password_hash = hashpw(temp_password.encode('utf-8'), gensalt()).decode('utf-8')
+        # Hash the temporary password usando el método personalizado
+        cliente.password_hash = hash_password(temp_password)
         
         # Optionally set estado to "Pendiente cambio de contraseña"
         # cliente.id_estado = 4
@@ -265,5 +306,6 @@ def resetear_password(id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error al resetear contraseña: {str(e)}', 'error')
+        print(f"Error en resetear password: {str(e)}")
     
     return redirect(url_for('clientes.editar', id=id))

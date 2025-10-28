@@ -1,13 +1,93 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from bcrypt import hashpw, gensalt, checkpw
+from werkzeug.security import generate_password_hash, check_password_hash
 from app import db
 from models import Clientes
 from datetime import datetime
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 import re
+import hashlib
 
 auth = Blueprint('auth', __name__)
+
+def hash_password(password):
+    """
+    Hash de contraseña completamente aleatorio y único:
+    1. Genera una sal aleatoria única de 32 bytes
+    2. HMAC con pepper + sal
+    3. Bcrypt
+    4. Almacena: sal_aleatoria + hash (todo en hex)
+    Resultado: Cada hash comienza diferente
+    """
+    import hmac
+    import secrets
+    from bcrypt import hashpw, gensalt
+    
+    # Obtener pepper desde configuración
+    try:
+        pepper = current_app.config.get('PEPPER_SECRET', '')
+    except RuntimeError:
+        from config import Config
+        pepper = Config.PEPPER_SECRET
+    
+    # Generar sal aleatoria única de 32 bytes
+    random_salt = secrets.token_bytes(32)
+    
+    # HMAC con pepper + sal aleatoria
+    hmac_hash = hmac.new(
+        (pepper + random_salt.hex()).encode('utf-8'),
+        password.encode('utf-8'),
+        hashlib.sha256
+    ).digest()
+    
+    # Bcrypt sobre el HMAC
+    bcrypt_hash = hashpw(hmac_hash, gensalt(rounds=12))
+    
+    # Combinar: sal_aleatoria + bcrypt_hash, todo en hexadecimal
+    # La sal aleatoria va primero (64 caracteres hex = 32 bytes)
+    final_hash = random_salt.hex() + bcrypt_hash.hex()
+    
+    return final_hash
+
+def verify_password(password, stored_hash):
+    """
+    Verificar contraseña con el mismo proceso usado en hash_password
+    """
+    try:
+        import hmac
+        from bcrypt import checkpw
+        
+        # Obtener pepper desde configuración
+        try:
+            pepper = current_app.config.get('PEPPER_SECRET', '')
+        except RuntimeError:
+            from config import Config
+            pepper = Config.PEPPER_SECRET
+        
+        # Extraer la sal aleatoria (primeros 64 caracteres hex = 32 bytes)
+        random_salt_hex = stored_hash[:64]
+        bcrypt_hash_hex = stored_hash[64:]
+        
+        # Convertir de hex a bytes
+        random_salt = bytes.fromhex(random_salt_hex)
+        bcrypt_hash = bytes.fromhex(bcrypt_hash_hex)
+        
+        # Recrear el HMAC con la misma sal aleatoria
+        hmac_hash = hmac.new(
+            (pepper + random_salt_hex).encode('utf-8'),
+            password.encode('utf-8'),
+            hashlib.sha256
+        ).digest()
+        
+        # Verificar con bcrypt
+        return checkpw(hmac_hash, bcrypt_hash)
+        
+    except Exception as e:
+        print(f"Error verificando contraseña: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 def validar_solo_letras(texto, campo):
     """Validar que un campo solo contenga letras y espacios"""
@@ -78,10 +158,10 @@ def login():
         ).first()
         
         # Verificar si existe y la contraseña es correcta
-        if usuario and checkpw(password.encode('utf-8'), usuario.password_hash.encode('utf-8')):
+        if usuario and verify_password(password, usuario.password_hash):
             # Verificar estado del usuario
-            if hasattr(usuario, 'Estado_Usuarios_') and usuario.Estado_Usuarios_:
-                estado = usuario.Estado_Usuarios_
+            if hasattr(usuario, 'Estado_Usuarios') and usuario.Estado_Usuarios:
+                estado = usuario.Estado_Usuarios
                 
                 # Verificar si el estado permite login
                 if not estado.permite_login:
@@ -91,8 +171,6 @@ def login():
                 # Si el estado es "Pendiente cambio de contraseña" (id_estado == 4)
                 if usuario.id_estado == 4:
                     flash('Debes cambiar tu contraseña antes de continuar.', 'warning')
-                    # TODO: Implementar ruta de cambio de contraseña obligatorio
-                    # return redirect(url_for('auth.cambiar_password', id=usuario.id_cliente))
                     return render_template('login.html')
             
             # Login exitoso
@@ -164,12 +242,10 @@ def registrar():
             # Obtener siguiente ID
             nuevo_id = get_next_id()
             
-            # Hash de la contraseña con bcrypt
-            password_hash = hashpw(password.encode('utf-8'), gensalt()).decode('utf-8')
+            # Hash de la contraseña con método mejorado
+            password_hash = hash_password(password)
             
             # Crear nuevo cliente
-            # id_estado = 1 (Activo) por defecto al registrarse
-            # Asegúrate de que existe el estado con id=1 en tu tabla Estado_Usuarios
             nuevo_cliente = Clientes(
                 id_cliente=nuevo_id,
                 nombres=nombres.title(),
@@ -181,7 +257,7 @@ def registrar():
                 tipo_usuario='cliente',
                 fecha_registro=datetime.now(),
                 ot=0,
-                id_estado=1,  # 1 = Activo (asegúrate que existe en tu BD)
+                id_estado=1,  # 1 = Activo
                 observaciones=None
             )
             
@@ -194,7 +270,7 @@ def registrar():
         except Exception as e:
             db.session.rollback()
             flash(f'Error al crear la cuenta: {str(e)}', 'error')
-            print(f"Error en registro: {str(e)}")  # Para debugging
+            print(f"Error en registro: {str(e)}")
     
     return render_template('registrar.html')
 
