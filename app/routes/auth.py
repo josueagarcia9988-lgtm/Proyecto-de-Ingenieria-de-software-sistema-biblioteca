@@ -89,48 +89,136 @@ def verify_password(password, stored_hash):
         traceback.print_exc()
         return False
 
-def validar_solo_letras(texto, campo):
-    """Validar que un campo solo contenga letras y espacios"""
+def validar_solo_letras(texto, campo_nombre):
+    """Validar que el campo solo contenga letras y espacios con reglas estrictas"""
     if not texto or not texto.strip():
-        return False, f'{campo} es obligatorio'
-    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$', texto):
-        return False, f'{campo} solo puede contener letras y espacios'
-    if len(texto.strip()) < 2:
-        return False, f'{campo} debe tener al menos 2 caracteres'
-    if len(texto.strip()) > 50:
-        return False, f'{campo} no puede exceder 50 caracteres'
-    return True, None
-
-def validar_email(email):
-    """Validar formato de email"""
-    if not email or not email.strip():
-        return False, 'Email es obligatorio'
-    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    if not re.match(pattern, email):
-        return False, 'Formato de email inválido'
-    if len(email) > 100:
-        return False, 'Email no puede exceder 100 caracteres'
-    return True, None
-
-def validar_telefono(telefono):
-    """Validar formato de teléfono"""
-    if not telefono or telefono == 'No especificado':
-        return True, None
-    pattern = r'^[\d\s\-\+\(\)]{8,20}$'
-    if not re.match(pattern, telefono):
-        return False, 'Formato de teléfono inválido (ej: 9999-9999)'
+        return False, f'{campo_nombre} es obligatorio'
+    
+    # Eliminar espacios múltiples para validación
+    texto_limpio = ' '.join(texto.split())
+    
+    # Longitud
+    if len(texto_limpio) < 2:
+        return False, f'{campo_nombre} debe tener al menos 2 caracteres'
+    if len(texto_limpio) > 20:
+        return False, f'{campo_nombre} no puede exceder 20 caracteres'
+    
+    # No más de 2 espacios seguidos en el texto original
+    if '   ' in texto:  # 3 espacios
+        return False, f'{campo_nombre} no puede tener más de 2 espacios consecutivos'
+    
+    # No más de 2 letras iguales seguidas
+    if re.search(r'(.)\1{2,}', texto_limpio):
+        return False, f'{campo_nombre} no puede tener la misma letra repetida más de 2 veces seguidas'
+    
+    # Solo letras (incluyendo acentos y ñ) y espacios
+    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$', texto_limpio):
+        return False, f'{campo_nombre} solo puede contener letras y espacios'
+    
     return True, None
 
 def validar_password(password, confirmar=None):
-    """Validar contraseña"""
+    """Validar contraseña con requisitos estrictos"""
     if not password:
         return False, 'Contraseña es obligatoria'
-    if len(password) < 6:
-        return False, 'Contraseña debe tener al menos 6 caracteres'
+    
+    if len(password) < 8:
+        return False, 'Contraseña debe tener al menos 8 caracteres'
+    
     if len(password) > 100:
         return False, 'Contraseña no puede exceder 100 caracteres'
+    
+    # Verificar que tenga al menos una mayúscula
+    if not re.search(r'[A-Z]', password):
+        return False, 'Contraseña debe contener al menos una letra mayúscula'
+    
+    # Verificar que tenga al menos una minúscula
+    if not re.search(r'[a-z]', password):
+        return False, 'Contraseña debe contener al menos una letra minúscula'
+    
+    # Verificar que tenga al menos un número
+    if not re.search(r'[0-9]', password):
+        return False, 'Contraseña debe contener al menos un número'
+    
+    # Verificar que tenga al menos un carácter especial
+    if not re.search(r'[!@#$%^&*()_+\-=\[\]{};\':"\\|,.<>\/?]', password):
+        return False, 'Contraseña debe contener al menos un carácter especial'
+    
+    # Verificar que las contraseñas coincidan
     if confirmar is not None and password != confirmar:
         return False, 'Las contraseñas no coinciden'
+    
+    return True, None
+
+def validar_email(email):
+    """Validar formato de email con reglas específicas"""
+    if not email or not email.strip():
+        return False, 'Email es obligatorio'
+    
+    email = email.strip().lower()
+    
+    # Patrón básico de email
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(pattern, email):
+        return False, 'Formato de email inválido'
+    
+    # Separar parte local (antes de @) y dominio (después de @)
+    try:
+        local, dominio = email.split('@')
+    except:
+        return False, 'Formato de email inválido'
+    
+    # Parte local: mínimo 2 caracteres antes del @
+    if len(local) < 2:
+        return False, 'El email debe tener al menos 2 caracteres antes del @'
+    
+    # Parte del dominio: máximo 8 caracteres antes del punto
+    dominio_sin_extension = dominio.split('.')[0]
+    if len(dominio_sin_extension) > 8:
+        return False, 'El dominio del email no puede tener más de 8 caracteres antes del punto'
+    
+    # No más de 2 caracteres iguales seguidos
+    if re.search(r'(.)\1{2,}', email):
+        return False, 'El email no puede tener el mismo carácter repetido más de 2 veces seguidas'
+    
+    # Longitud total
+    if len(email) > 100:
+        return False, 'Email no puede exceder 100 caracteres'
+    
+    return True, None
+
+def validar_telefono(telefono):
+    """Validar formato de teléfono hondureño (+504 y debe empezar con 3, 7, 8 o 9)"""
+    if not telefono or telefono == 'No especificado':
+        return True, None
+    
+    # Limpiar espacios y guiones para validación
+    telefono_limpio = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    
+    # Debe empezar con +504 o solo el número
+    if telefono_limpio.startswith('+504'):
+        numero = telefono_limpio[4:]  # Quitar +504
+    elif telefono_limpio.startswith('504'):
+        numero = telefono_limpio[3:]  # Quitar 504
+    else:
+        numero = telefono_limpio
+    
+    # Validar que solo contenga dígitos después de limpiar
+    if not numero.isdigit():
+        return False, 'El teléfono solo puede contener números después del código de país'
+    
+    # Debe tener exactamente 8 dígitos
+    if len(numero) != 8:
+        return False, 'El número de teléfono debe tener exactamente 8 dígitos'
+    
+    # Debe empezar con 3, 7, 8 o 9
+    if numero[0] not in ['3', '7', '8', '9']:
+        return False, 'El número de teléfono debe empezar con 3, 7, 8 o 9'
+    
+    # Formato válido: debe incluir +504
+    if not telefono_limpio.startswith('+504'):
+        return False, 'El teléfono debe incluir el código de país +504 (ej: +504 9999-9999)'
+    
     return True, None
 
 def get_next_id():

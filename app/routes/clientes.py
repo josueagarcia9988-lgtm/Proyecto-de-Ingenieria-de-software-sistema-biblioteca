@@ -50,47 +50,144 @@ def hash_password(password):
     return final_hash
 
 def validar_solo_letras(texto, campo):
-    """Validar que un campo solo contenga letras y espacios"""
+    """Validar que un campo solo contenga letras y espacios con reglas estrictas"""
     if not texto or not texto.strip():
         return False, f'{campo} es obligatorio'
-    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$', texto):
+    
+    # Eliminar espacios múltiples para validación
+    texto_limpio = ' '.join(texto.split())
+    
+    # Solo letras y espacios
+    if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+$', texto_limpio):
         return False, f'{campo} solo puede contener letras y espacios'
-    if len(texto.strip()) < 2:
+    
+    # No más de 2 espacios seguidos en el texto original
+    if '   ' in texto:  # 3 espacios
+        return False, f'{campo} no puede tener más de 2 espacios consecutivos'
+    
+    # No más de 2 letras iguales seguidas (no existe en español)
+    if re.search(r'(.)\1{2,}', texto_limpio):
+        return False, f'{campo} no puede tener la misma letra repetida más de 2 veces seguidas'
+    
+    # Longitud
+    if len(texto_limpio) < 2:
         return False, f'{campo} debe tener al menos 2 caracteres'
-    if len(texto.strip()) > 50:
+    if len(texto_limpio) > 50:
         return False, f'{campo} no puede exceder 50 caracteres'
+    
     return True, None
 
 def validar_email(email):
-    """Validar formato de email"""
+    """Validar formato de email con reglas específicas"""
     if not email or not email.strip():
         return False, 'Email es obligatorio'
+    
+    email = email.strip().lower()
+    
+    # Patrón básico de email
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(pattern, email):
         return False, 'Formato de email inválido'
+    
+    # Separar parte local (antes de @) y dominio (después de @)
+    try:
+        local, dominio = email.split('@')
+    except:
+        return False, 'Formato de email inválido'
+    
+    # Parte local: mínimo 2 caracteres antes del @
+    if len(local) < 2:
+        return False, 'El email debe tener al menos 2 caracteres antes del @'
+    
+    # Parte del dominio: máximo 8 caracteres antes del punto
+    dominio_sin_extension = dominio.split('.')[0]
+    if len(dominio_sin_extension) > 8:
+        return False, 'El dominio del email no puede tener más de 8 caracteres antes del punto'
+    
+    # No más de 2 caracteres iguales seguidos
+    if re.search(r'(.)\1{2,}', email):
+        return False, 'El email no puede tener el mismo carácter repetido más de 2 veces seguidas'
+    
+    # Longitud total
     if len(email) > 100:
         return False, 'Email no puede exceder 100 caracteres'
+    
     return True, None
 
 def validar_telefono(telefono):
-    """Validar formato de teléfono"""
+    """Validar formato de teléfono hondureño (+504 y debe empezar con 3, 7, 8 o 9)"""
     if not telefono or telefono == 'No especificado':
         return True, None
-    pattern = r'^[\d\s\-\+\(\)]{8,20}$'
-    if not re.match(pattern, telefono):
-        return False, 'Formato de teléfono inválido (ej: 9999-9999)'
+    
+    # Limpiar espacios y guiones para validación
+    telefono_limpio = telefono.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
+    
+    # Debe empezar con +504 o solo el número
+    if telefono_limpio.startswith('+504'):
+        numero = telefono_limpio[4:]  # Quitar +504
+    elif telefono_limpio.startswith('504'):
+        numero = telefono_limpio[3:]  # Quitar 504
+    else:
+        numero = telefono_limpio
+    
+    # Validar que solo contenga dígitos después de limpiar
+    if not numero.isdigit():
+        return False, 'El teléfono solo puede contener números después del código de país'
+    
+    # Debe tener exactamente 8 dígitos
+    if len(numero) != 8:
+        return False, 'El número de teléfono debe tener exactamente 8 dígitos'
+    
+    # Debe empezar con 3, 7, 8 o 9
+    if numero[0] not in ['3', '7', '8', '9']:
+        return False, 'El número de teléfono debe empezar con 3, 7, 8 o 9'
+    
+    # Formato válido: debe incluir +504
+    if not telefono_limpio.startswith('+504'):
+        return False, 'El teléfono debe incluir el código de país +504 (ej: +504 9999-9999)'
+    
     return True, None
 
-def validar_password(password, confirmar=None):
-    """Validar contraseña"""
-    if not password:
-        return False, 'Contraseña es obligatoria'
-    if len(password) < 6:
-        return False, 'Contraseña debe tener al menos 6 caracteres'
-    if len(password) > 100:
-        return False, 'Contraseña no puede exceder 100 caracteres'
-    if confirmar is not None and password != confirmar:
-        return False, 'Las contraseñas no coinciden'
+def validar_direccion(direccion):
+    """Validar dirección con límites de caracteres"""
+    if not direccion or direccion == 'No especificada':
+        return True, None
+    
+    direccion = direccion.strip()
+    
+    # No más de 2 espacios consecutivos
+    if '   ' in direccion:
+        return False, 'La dirección no puede tener más de 2 espacios consecutivos'
+    
+    # No más de 2 caracteres iguales seguidos (excepto espacios)
+    if re.search(r'([^\s])\1{2,}', direccion):
+        return False, 'La dirección no puede tener el mismo carácter repetido más de 2 veces seguidas'
+    
+    # Longitud máxima
+    if len(direccion) > 200:
+        return False, 'La dirección no puede exceder 200 caracteres'
+    
+    # Mínimo 5 caracteres
+    if len(direccion) < 5:
+        return False, 'La dirección debe tener al menos 5 caracteres'
+    
+    return True, None
+
+def validar_observaciones(observaciones):
+    """Validar observaciones con límites"""
+    if not observaciones:
+        return True, None
+    
+    observaciones = observaciones.strip()
+    
+    # No más de 2 espacios consecutivos
+    if '   ' in observaciones:
+        return False, 'Las observaciones no pueden tener más de 2 espacios consecutivos'
+    
+    # Longitud máxima
+    if len(observaciones) > 500:
+        return False, 'Las observaciones no pueden exceder 500 caracteres'
+    
     return True, None
 
 def get_next_id():
@@ -125,6 +222,8 @@ def crear():
             apellidos = request.form.get('apellidos', '').strip()
             email = request.form.get('email', '').strip().lower()
             telefono = request.form.get('telefono', '').strip()
+            direccion = request.form.get('direccion', '').strip()
+            observaciones = request.form.get('observaciones', '').strip()
             
             # Validar nombres
             valido, error = validar_solo_letras(nombres, 'Nombres')
@@ -158,6 +257,20 @@ def crear():
                 flash(error, 'error')
                 return render_template('clientes/form.html', cliente=None, estados=estados)
             
+            # Validar dirección
+            if direccion:
+                valido, error = validar_direccion(direccion)
+                if not valido:
+                    flash(error, 'error')
+                    return render_template('clientes/form.html', cliente=None, estados=estados)
+            
+            # Validar observaciones
+            if observaciones:
+                valido, error = validar_observaciones(observaciones)
+                if not valido:
+                    flash(error, 'error')
+                    return render_template('clientes/form.html', cliente=None, estados=estados)
+            
             # Generar contraseña temporal automáticamente (más segura)
             # Incluye mayúsculas, minúsculas, dígitos y símbolos
             chars = string.ascii_letters + string.digits + '!@#$%'
@@ -174,12 +287,12 @@ def crear():
                 email=email,
                 password_hash=password_hash,
                 telefono=telefono if telefono else 'No especificado',
-                direccion=request.form.get('direccion', '').strip() or 'No especificada',
+                direccion=direccion or 'No especificada',
                 tipo_usuario=request.form.get('tipo_usuario', 'cliente'),
                 fecha_registro=datetime.now(),
                 id_estado=int(request.form.get('id_estado', 1)),
                 ot=int(request.form.get('ot', 0)),
-                observaciones=request.form.get('observaciones', '').strip() or None
+                observaciones=observaciones or None
             )
             
             db.session.add(nuevo_cliente)
@@ -214,6 +327,8 @@ def editar(id):
             nombres = request.form.get('nombres', '').strip()
             apellidos = request.form.get('apellidos', '').strip()
             telefono = request.form.get('telefono', '').strip()
+            direccion = request.form.get('direccion', '').strip()
+            observaciones = request.form.get('observaciones', '').strip()
             
             # Validar nombres
             valido, error = validar_solo_letras(nombres, 'Nombres')
@@ -233,15 +348,29 @@ def editar(id):
                 flash(error, 'error')
                 return render_template('clientes/form.html', cliente=cliente, estados=estados)
             
+            # Validar dirección
+            if direccion:
+                valido, error = validar_direccion(direccion)
+                if not valido:
+                    flash(error, 'error')
+                    return render_template('clientes/form.html', cliente=cliente, estados=estados)
+            
+            # Validar observaciones
+            if observaciones:
+                valido, error = validar_observaciones(observaciones)
+                if not valido:
+                    flash(error, 'error')
+                    return render_template('clientes/form.html', cliente=cliente, estados=estados)
+            
             # Actualizar datos
             cliente.nombres = nombres.title()
             cliente.apellidos = apellidos.title()
             cliente.telefono = telefono if telefono else 'No especificado'
-            cliente.direccion = request.form.get('direccion', '').strip() or 'No especificada'
+            cliente.direccion = direccion or 'No especificada'
             cliente.tipo_usuario = request.form.get('tipo_usuario', 'cliente')
             cliente.id_estado = int(request.form.get('id_estado', 1))
             cliente.ot = int(request.form.get('ot', 0))
-            cliente.observaciones = request.form.get('observaciones', '').strip() or None
+            cliente.observaciones = observaciones or None
             
             db.session.commit()
             flash(f'Cliente {nombres} {apellidos} actualizado exitosamente.', 'success')
@@ -271,7 +400,7 @@ def eliminar(id):
         nombre_completo = f'{cliente.nombres} {cliente.apellidos}'
         db.session.delete(cliente)
         db.session.commit()
-        flash(f'Cliente {nombre_completo} eliminado exitosamente.', 'error')
+        flash(f'Cliente {nombre_completo} eliminado exitosamente.', 'success')
         
     except Exception as e:
         db.session.rollback()

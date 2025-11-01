@@ -28,10 +28,11 @@
                            class="form-input"
                            required
                            min="1"
+                           max="9999"
                            step="1"
                            placeholder="Ej: 1, 2, 3..."
                            autofocus>
-                    <small class="form-hint">Número único para identificar este tipo de documento</small>
+                    <small class="form-hint">Número único entre 1 y 9999</small>
                 </div>
                 {% else %}
                 <div class="info-box">
@@ -56,10 +57,11 @@
                            class="form-input"
                            value="{{ tipo.nombre if tipo else '' }}"
                            required
-                           maxlength="50"
+                           minlength="2"
+                           maxlength="30"
                            placeholder="Ej: DNI, Pasaporte, Cédula..."
                            {{ 'autofocus' if tipo else '' }}>
-                    <small class="form-hint">Máximo 50 caracteres</small>
+                    <small class="form-hint" id="nombreHint">2-30 caracteres (letras, números, espacios, guiones y puntos)</small>
                 </div>
 
                 <!-- Descripción -->
@@ -69,9 +71,9 @@
                               name="descripcion" 
                               class="form-input" 
                               rows="3"
-                              maxlength="150"
-                              placeholder="Descripción breve del tipo de documento (opcional)">{{ tipo.descripcion if tipo else '' }}</textarea>
-                    <small class="form-hint">Máximo 150 caracteres</small>
+                              maxlength="100"
+                              placeholder="Descripción breve del tipo de documento (mínimo 5 caracteres, opcional)">{{ tipo.descripcion if tipo else '' }}</textarea>
+                    <small class="form-hint" id="descripcionHint">Máximo 100 caracteres (mínimo 5 si se completa)</small>
                 </div>
 
                 <!-- Estado Activo -->
@@ -384,39 +386,134 @@ textarea.form-input {
 </style>
 
 <script>
-// Character counter for description
-const descripcionInput = document.getElementById('descripcion');
-if (descripcionInput) {
-    const maxLength = 150;
-    const hint = descripcionInput.nextElementSibling;
-    
-    descripcionInput.addEventListener('input', function() {
-        const remaining = maxLength - this.value.length;
-        hint.textContent = `${remaining} caracteres restantes (máximo ${maxLength})`;
+// Real-time validation for nombre
+const nombreInput = document.getElementById('nombre');
+const nombreHint = document.getElementById('nombreHint');
+
+if (nombreInput) {
+    nombreInput.addEventListener('input', function(e) {
+        let value = e.target.value;
         
-        if (remaining < 20) {
-            hint.style.color = '#f59e0b';
+        // Only allow letters, numbers, spaces, hyphens, and periods
+        value = value.replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]/g, '');
+        
+        // Prevent more than 2 consecutive spaces
+        value = value.replace(/\s{3,}/g, '  ');
+        
+        // Remove more than 2 consecutive same characters (except spaces)
+        value = value.replace(/([^\s])\1{2,}/g, function(match) {
+            return match.substring(0, 2);
+        });
+        
+        e.target.value = value;
+        
+        // Update hint with character count
+        const remaining = 30 - value.length;
+        if (remaining < 10) {
+            nombreHint.style.color = '#f59e0b';
+            nombreHint.textContent = `${remaining} caracteres restantes`;
         } else {
-            hint.style.color = '#718096';
+            nombreHint.style.color = '#718096';
+            nombreHint.textContent = '2-30 caracteres (letras, números, espacios, guiones y puntos)';
         }
     });
 }
 
-// Character counter for nombre
-const nombreInput = document.getElementById('nombre');
-if (nombreInput) {
-    const maxLength = 50;
-    const hint = nombreInput.nextElementSibling;
-    
-    nombreInput.addEventListener('input', function() {
-        const remaining = maxLength - this.value.length;
-        hint.textContent = `${remaining} caracteres restantes (máximo ${maxLength})`;
+// Real-time validation for descripcion
+const descripcionInput = document.getElementById('descripcion');
+const descripcionHint = document.getElementById('descripcionHint');
+
+if (descripcionInput) {
+    descripcionInput.addEventListener('input', function(e) {
+        let value = e.target.value;
         
-        if (remaining < 10) {
-            hint.style.color = '#f59e0b';
+        // Prevent more than 2 consecutive spaces
+        value = value.replace(/\s{3,}/g, '  ');
+        
+        e.target.value = value;
+        
+        // Update hint with character count
+        const length = value.trim().length;
+        const remaining = 100 - value.length;
+        
+        if (length > 0 && length < 5) {
+            descripcionHint.style.color = '#dc3545';
+            descripcionHint.textContent = `Mínimo 5 caracteres (actual: ${length})`;
+        } else if (remaining < 20) {
+            descripcionHint.style.color = '#f59e0b';
+            descripcionHint.textContent = `${remaining} caracteres restantes`;
         } else {
-            hint.style.color = '#718096';
+            descripcionHint.style.color = '#718096';
+            descripcionHint.textContent = 'Máximo 100 caracteres (mínimo 5 si se completa)';
         }
+    });
+}
+
+// Form validation before submit
+document.getElementById('tipoForm').addEventListener('submit', function(e) {
+    const nombre = nombreInput.value.trim();
+    const descripcion = descripcionInput.value.trim();
+    
+    // Validate nombre length
+    if (nombre.length < 2) {
+        e.preventDefault();
+        alert('El nombre debe tener al menos 2 caracteres');
+        nombreInput.focus();
+        return false;
+    }
+    
+    if (nombre.length > 30) {
+        e.preventDefault();
+        alert('El nombre no puede exceder 30 caracteres');
+        nombreInput.focus();
+        return false;
+    }
+    
+    // Validate descripcion if provided
+    if (descripcion.length > 0 && descripcion.length < 5) {
+        e.preventDefault();
+        alert('La descripción debe tener al menos 5 caracteres si se completa');
+        descripcionInput.focus();
+        return false;
+    }
+    
+    if (descripcion.length > 100) {
+        e.preventDefault();
+        alert('La descripción no puede exceder 100 caracteres');
+        descripcionInput.focus();
+        return false;
+    }
+    
+    // Check for repeated characters in nombre
+    const repeatedChars = /([^\s])\1{2,}/;
+    if (repeatedChars.test(nombre)) {
+        e.preventDefault();
+        alert('El nombre no puede tener el mismo carácter repetido más de 2 veces seguidas');
+        nombreInput.focus();
+        return false;
+    }
+    
+    // Check for more than 2 consecutive spaces
+    if (/\s{3,}/.test(nombre) || /\s{3,}/.test(descripcion)) {
+        e.preventDefault();
+        alert('No se permiten más de 2 espacios consecutivos');
+        return false;
+    }
+});
+
+// ID validation for create form
+const idInput = document.getElementById('id_tipo_documento');
+if (idInput) {
+    idInput.addEventListener('input', function(e) {
+        // Remove any non-digit characters
+        let value = e.target.value.replace(/\D/g, '');
+        
+        // Limit to 4 digits (max 9999)
+        if (value.length > 4) {
+            value = value.substring(0, 4);
+        }
+        
+        e.target.value = value;
     });
 }
 </script>
