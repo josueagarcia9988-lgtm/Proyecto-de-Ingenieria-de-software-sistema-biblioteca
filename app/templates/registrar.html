@@ -387,11 +387,11 @@
                                    name="nombres" 
                                    required
                                    minlength="2"
-                                   maxlength="50"
+                                   maxlength="20"
                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                    placeholder="Juan">
                         </div>
-                        <small class="error-message" id="nombres-error">Solo letras y espacios</small>
+                        <small class="form-hint">2-20 caracteres, solo letras</small>
                     </div>
 
                     <div class="form-group">
@@ -406,11 +406,11 @@
                                    name="apellidos" 
                                    required
                                    minlength="2"
-                                   maxlength="50"
+                                   maxlength="20"
                                    pattern="[A-Za-zÁÉÍÓÚáéíóúÑñ\s]+"
                                    placeholder="Pérez">
                         </div>
-                        <small class="error-message" id="apellidos-error">Solo letras y espacios</small>
+                        <small class="form-hint">2-20 caracteres, solo letras</small>
                     </div>
                 </div>
 
@@ -441,9 +441,10 @@
                         <input type="tel" 
                                id="telefono" 
                                name="telefono" 
-                               pattern="[\d\s\-\+\(\)]{8,20}"
-                               placeholder="9999-9999">
+                               maxlength="16"
+                               placeholder="+504 9999-9999">
                     </div>
+                    <small class="form-hint">Formato: +504 9999-9999 (se formatea automáticamente)</small>
                 </div>
 
                 <div class="form-group full-width">
@@ -584,32 +585,93 @@
     <script>
         // Real-time validation for nombres
         document.getElementById('nombres').addEventListener('input', function(e) {
-            const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
-            const error = document.getElementById('nombres-error');
-            
-            if (!regex.test(e.target.value)) {
-                e.target.classList.add('error');
-                error.classList.add('show');
-                e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
-            } else {
-                e.target.classList.remove('error');
-                error.classList.remove('show');
-            }
+            let value = e.target.value;
+            // Remove invalid characters
+            value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+            // Prevent more than 2 consecutive spaces
+            value = value.replace(/\s{3,}/g, '  ');
+            // Remove more than 2 consecutive same characters
+            value = value.replace(/([A-Za-zÁÉÍÓÚáéíóúÑñ])\1{2,}/g, function(match) {
+                return match.substring(0, 2);
+            });
+            e.target.value = value;
         });
 
         // Real-time validation for apellidos
         document.getElementById('apellidos').addEventListener('input', function(e) {
-            const regex = /^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]*$/;
-            const error = document.getElementById('apellidos-error');
+            let value = e.target.value;
+            value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+            value = value.replace(/\s{3,}/g, '  ');
+            value = value.replace(/([A-Za-zÁÉÍÓÚáéíóúÑñ])\1{2,}/g, function(match) {
+                return match.substring(0, 2);
+            });
+            e.target.value = value;
+        });
+
+        // Email validation
+        document.getElementById('email').addEventListener('input', function(e) {
+            let value = e.target.value.trim().toLowerCase();
+            const emailError = document.getElementById('email-error');
             
-            if (!regex.test(e.target.value)) {
+            // Remove more than 2 consecutive same characters
+            value = value.replace(/(.)\1{2,}/g, function(match) {
+                return match.substring(0, 2);
+            });
+            
+            e.target.value = value;
+            
+            // Validate email format
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (value.length > 0 && !emailRegex.test(value)) {
                 e.target.classList.add('error');
-                error.classList.add('show');
-                e.target.value = e.target.value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+                emailError.classList.add('show');
             } else {
                 e.target.classList.remove('error');
-                error.classList.remove('show');
+                emailError.classList.remove('show');
             }
+        });
+
+        // Phone number auto-format
+        document.getElementById('telefono').addEventListener('input', function(e) {
+            let value = e.target.value;
+            
+            // Remove all non-digits except +
+            let digits = value.replace(/[^\d+]/g, '');
+            
+            // Remove any + that's not at the start
+            if (digits.includes('+')) {
+                digits = '+' + digits.replace(/\+/g, '');
+            }
+            
+            // If user starts typing without +504, add it
+            if (digits && !digits.startsWith('+504')) {
+                if (digits.startsWith('+')) {
+                    digits = '+504' + digits.substring(1);
+                } else {
+                    digits = '+504' + digits;
+                }
+            }
+            
+            // Extract just the 8-digit number part (after +504)
+            let numberPart = digits.replace('+504', '');
+            
+            // Limit to 8 digits
+            if (numberPart.length > 8) {
+                numberPart = numberPart.substring(0, 8);
+            }
+            
+            // Format as +504 9999-9999
+            if (numberPart.length > 0) {
+                if (numberPart.length <= 4) {
+                    value = '+504 ' + numberPart;
+                } else {
+                    value = '+504 ' + numberPart.substring(0, 4) + '-' + numberPart.substring(4);
+                }
+            } else {
+                value = '';
+            }
+            
+            e.target.value = value;
         });
 
         // Validación de email - mínimo 3 caracteres antes del @
@@ -768,6 +830,51 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const passwordConfirm = document.getElementById('password_confirm').value;
+            const telefono = document.getElementById('telefono').value.trim();
+            
+            // Validate password requirements
+            const hasMinLength = password.length >= 8;
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+            const hasUpperCase = /[A-Z]/.test(password);
+            const hasLowerCase = /[a-z]/.test(password);
+            const withinMaxLength = password.length <= 100;
+            
+            if (!hasMinLength) {
+                e.preventDefault();
+                alert('La contraseña debe tener al menos 8 caracteres');
+                return false;
+            }
+            
+            if (!hasUpperCase) {
+                e.preventDefault();
+                alert('La contraseña debe contener al menos una letra mayúscula');
+                return false;
+            }
+            
+            if (!hasLowerCase) {
+                e.preventDefault();
+                alert('La contraseña debe contener al menos una letra minúscula');
+                return false;
+            }
+            
+            if (!hasNumber) {
+                e.preventDefault();
+                alert('La contraseña debe contener al menos un número');
+                return false;
+            }
+            
+            if (!hasSpecialChar) {
+                e.preventDefault();
+                alert('La contraseña debe contener al menos un carácter especial');
+                return false;
+            }
+            
+            if (!withinMaxLength) {
+                e.preventDefault();
+                alert('La contraseña no puede exceder 100 caracteres');
+                return false;
+            }
             
             // VALIDACIÓN DEL EMAIL - Mínimo 3 caracteres antes del @
             if (email.includes('@')) {

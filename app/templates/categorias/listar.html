@@ -22,23 +22,33 @@
         padding: 1.5rem; 
         margin-bottom: 1.5rem; 
         box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 1rem;
-        align-items: center;
     }
     
-    .search-box { position: relative; }
+    .search-box { position: relative; margin-bottom: 1rem; }
     .search-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #a0aec0; }
     .search-input { width: 100%; padding: 0.75rem 3rem; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; transition: border 0.2s; font-family: 'Poppins', sans-serif; }
     .search-input:focus { outline: none; border-color: #667eea; }
-    .clear-btn { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; }
+    .clear-btn { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); background: #e2e8f0; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; display: none; align-items: center; justify-content: center; transition: all 0.2s; }
     .clear-btn.show { display: flex; }
+    .clear-btn:hover { background: #cbd5e0; }
+    
+    .filter-group { display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .filter-select { 
+        padding: 0.75rem; 
+        border: 2px solid #e2e8f0; 
+        border-radius: 8px; 
+        font-size: 0.95rem; 
+        cursor: pointer; 
+        background: white; 
+        font-family: 'Poppins', sans-serif;
+        transition: border 0.2s;
+    }
+    .filter-select:focus { outline: none; border-color: #667eea; }
+    .rows-select { font-weight: 500; }
     
     .filter-stats { 
         color: #718096; 
         font-size: 0.9rem;
-        white-space: nowrap;
     }
     .filter-stats span { font-weight: 600; color: #667eea; }
 
@@ -85,6 +95,21 @@
     .no-results svg { margin: 0 auto 1rem; opacity: 0.3; }
     .no-results p { color: #718096; margin: 0; }
 
+    /* Pagination Styles */
+    .pagination-container { background: white; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .pagination-container.hidden { display: none; }
+    .pagination-info { color: #718096; font-size: 0.9rem; }
+    .pagination-info span { font-weight: 600; color: #667eea; }
+    .pagination-controls { display: flex; gap: 0.5rem; align-items: center; }
+    .pagination-btn { width: 36px; height: 36px; border: 2px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: #4a5568; }
+    .pagination-btn:hover:not(:disabled) { border-color: #667eea; color: #667eea; background: #f0f4ff; }
+    .pagination-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .page-numbers { display: flex; gap: 0.25rem; }
+    .page-number { min-width: 36px; height: 36px; border: 2px solid #e2e8f0; background: white; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; color: #4a5568; font-weight: 500; font-size: 0.9rem; padding: 0 0.5rem; }
+    .page-number:hover { border-color: #667eea; color: #667eea; background: #f0f4ff; }
+    .page-number.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-color: transparent; }
+    .page-ellipsis { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #a0aec0; font-weight: 600; }
+
     /* Modal */
     .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
     .modal.show { display: flex; }
@@ -104,12 +129,13 @@
     .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid #e2e8f0; display: flex; gap: 0.5rem; justify-content: flex-end; }
 
     @media (max-width: 768px) {
-        .filters-container { grid-template-columns: 1fr; }
         .page-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
         .header-left { flex-direction: column; align-items: flex-start; }
         .data-table { font-size: 0.85rem; }
         .data-table th, .data-table td { padding: 0.75rem 0.5rem; }
         .detail-row { grid-template-columns: 1fr; }
+        .pagination-container { flex-direction: column; gap: 1rem; }
+        .pagination-info { text-align: center; }
     }
 </style>
 {% endblock %}
@@ -153,6 +179,15 @@
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </button>
+        </div>
+        <div class="filter-group">
+            <select id="rowsPerPage" class="filter-select rows-select">
+                <option value="10">10 por página</option>
+                <option value="25" selected>25 por página</option>
+                <option value="50">50 por página</option>
+                <option value="100">100 por página</option>
+                <option value="all">Mostrar todos</option>
+            </select>
         </div>
         <div class="filter-stats">
             <span id="statsText">{{ categorias|length }} categorías</span>
@@ -222,6 +257,38 @@
             <p>No se encontraron resultados</p>
         </div>
     </div>
+
+    <!-- Pagination Controls -->
+    <div id="paginationContainer" class="pagination-container">
+        <div class="pagination-info">
+            Mostrando <span id="pageRange"></span> de <span id="totalVisible"></span> registros
+        </div>
+        <div class="pagination-controls">
+            <button class="pagination-btn" id="firstBtn" onclick="goToPage(1)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="11 17 6 12 11 7"></polyline>
+                    <polyline points="18 17 13 12 18 7"></polyline>
+                </svg>
+            </button>
+            <button class="pagination-btn" id="prevBtn" onclick="goToPage(currentPage - 1)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div id="pageNumbers" class="page-numbers"></div>
+            <button class="pagination-btn" id="nextBtn" onclick="goToPage(currentPage + 1)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+            <button class="pagination-btn" id="lastBtn" onclick="goToPage(totalPages)">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 17 18 12 13 7"></polyline>
+                    <polyline points="6 17 11 12 6 7"></polyline>
+                </svg>
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Details Modal -->
@@ -271,30 +338,140 @@
 {% block extra_js %}
 <script>
 const searchInput = document.getElementById('searchInput');
+const rowsPerPageSelect = document.getElementById('rowsPerPage');
 const clearBtn = document.getElementById('clearBtn');
 const tableBody = document.getElementById('tableBody');
 const noResults = document.getElementById('noResults');
 const statsText = document.getElementById('statsText');
-const rows = [...tableBody.querySelectorAll('tr')];
+const paginationContainer = document.getElementById('paginationContainer');
+const pageRange = document.getElementById('pageRange');
+const totalVisible = document.getElementById('totalVisible');
+const pageNumbers = document.getElementById('pageNumbers');
+
+const allRows = [...tableBody.querySelectorAll('tr')];
+let filteredRows = [...allRows];
+let currentPage = 1;
+let totalPages = 1;
+let rowsPerPage = 25;
 
 function applyFilters() {
     const search = searchInput.value.toLowerCase();
-    let visible = 0;
     
-    rows.forEach(row => {
+    filteredRows = allRows.filter(row => {
         const matchSearch = !search || row.dataset.search.includes(search);
-        
-        if (matchSearch) {
-            row.style.display = '';
-            visible++;
-        } else {
-            row.style.display = 'none';
-        }
+        return matchSearch;
     });
     
-    noResults.classList.toggle('show', visible === 0);
-    statsText.textContent = `${visible} de ${rows.length} categorías`;
+    currentPage = 1;
+    updatePagination();
     clearBtn.classList.toggle('show', search);
+}
+
+function updatePagination() {
+    const visibleCount = filteredRows.length;
+    
+    // Hide all rows first
+    allRows.forEach(row => row.style.display = 'none');
+    
+    // Show no results if needed
+    noResults.classList.toggle('show', visibleCount === 0);
+    
+    // Update stats
+    statsText.textContent = `${visibleCount} de ${allRows.length} categorías`;
+    totalVisible.textContent = visibleCount;
+    
+    // Calculate pagination
+    if (rowsPerPageSelect.value === 'all') {
+        // Show all filtered rows
+        filteredRows.forEach(row => row.style.display = '');
+        paginationContainer.classList.add('hidden');
+        return;
+    }
+    
+    rowsPerPage = parseInt(rowsPerPageSelect.value);
+    totalPages = Math.ceil(visibleCount / rowsPerPage);
+    
+    // Show/hide pagination
+    paginationContainer.classList.toggle('hidden', totalPages <= 1);
+    
+    if (totalPages > 0) {
+        // Calculate range
+        const start = (currentPage - 1) * rowsPerPage;
+        const end = Math.min(start + rowsPerPage, visibleCount);
+        
+        // Show rows for current page
+        filteredRows.slice(start, end).forEach(row => row.style.display = '');
+        
+        // Update page info
+        pageRange.textContent = `${start + 1}-${end}`;
+        
+        // Update page numbers
+        renderPageNumbers();
+        
+        // Update button states
+        document.getElementById('firstBtn').disabled = currentPage === 1;
+        document.getElementById('prevBtn').disabled = currentPage === 1;
+        document.getElementById('nextBtn').disabled = currentPage === totalPages;
+        document.getElementById('lastBtn').disabled = currentPage === totalPages;
+    }
+}
+
+function renderPageNumbers() {
+    pageNumbers.innerHTML = '';
+    
+    const maxVisible = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+    
+    if (endPage - startPage < maxVisible - 1) {
+        startPage = Math.max(1, endPage - maxVisible + 1);
+    }
+    
+    // First page
+    if (startPage > 1) {
+        pageNumbers.appendChild(createPageButton(1));
+        if (startPage > 2) {
+            pageNumbers.appendChild(createEllipsis());
+        }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        pageNumbers.appendChild(createPageButton(i));
+    }
+    
+    // Last page
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            pageNumbers.appendChild(createEllipsis());
+        }
+        pageNumbers.appendChild(createPageButton(totalPages));
+    }
+}
+
+function createPageButton(page) {
+    const btn = document.createElement('button');
+    btn.className = 'page-number';
+    btn.textContent = page;
+    btn.onclick = () => goToPage(page);
+    if (page === currentPage) {
+        btn.classList.add('active');
+    }
+    return btn;
+}
+
+function createEllipsis() {
+    const span = document.createElement('span');
+    span.className = 'page-ellipsis';
+    span.textContent = '...';
+    return span;
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    updatePagination();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function clearFilters() {
@@ -302,7 +479,15 @@ function clearFilters() {
     applyFilters();
 }
 
+// Event listeners
 searchInput.addEventListener('input', applyFilters);
+rowsPerPageSelect.addEventListener('change', () => {
+    currentPage = 1;
+    updatePagination();
+});
+
+// Initialize
+updatePagination();
 
 function showDetails(id, nombre, descripcion, observaciones, libros) {
     document.getElementById('dId').textContent = '#' + id;

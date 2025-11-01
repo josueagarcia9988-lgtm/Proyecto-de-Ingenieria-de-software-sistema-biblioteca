@@ -26,26 +26,51 @@ def validar_id(id_str):
     return True, None
 
 def validar_nombre(nombre):
-    """Validar nombre del tipo de documento"""
+    """Validar nombre del tipo de documento con reglas estrictas"""
     if not nombre or not nombre.strip():
         return False, 'El nombre es obligatorio'
     
-    if len(nombre.strip()) < 2:
+    nombre_limpio = ' '.join(nombre.split())
+    
+    # Longitud mínima y máxima
+    if len(nombre_limpio) < 2:
         return False, 'El nombre debe tener al menos 2 caracteres'
     
-    if len(nombre.strip()) > 50:
-        return False, 'El nombre no puede exceder 50 caracteres'
+    if len(nombre_limpio) > 30:
+        return False, 'El nombre no puede exceder 30 caracteres'
     
-    # Validar que no contenga solo espacios o caracteres especiales
-    if not re.match(r'^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]+$', nombre):
+    # No más de 2 espacios seguidos en el texto original
+    if '   ' in nombre:  # 3 espacios
+        return False, 'El nombre no puede tener más de 2 espacios consecutivos'
+    
+    # Validar caracteres permitidos
+    if not re.match(r'^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]+$', nombre_limpio):
         return False, 'El nombre solo puede contener letras, números, espacios, guiones y puntos'
+    
+    # No más de 2 caracteres iguales seguidos (excepto espacios)
+    if re.search(r'([^\s])\1{2,}', nombre_limpio):
+        return False, 'El nombre no puede tener el mismo carácter repetido más de 2 veces seguidas'
     
     return True, None
 
 def validar_descripcion(descripcion):
-    """Validar descripción del tipo de documento"""
-    if descripcion and len(descripcion.strip()) > 150:
-        return False, 'La descripción no puede exceder 150 caracteres'
+    """Validar descripción del tipo de documento con reglas estrictas"""
+    if not descripcion:
+        return True, None
+    
+    descripcion = descripcion.strip()
+    
+    # No más de 2 espacios consecutivos
+    if '   ' in descripcion:
+        return False, 'La descripción no puede tener más de 2 espacios consecutivos'
+    
+    # Longitud máxima
+    if len(descripcion) > 100:
+        return False, 'La descripción no puede exceder 100 caracteres'
+    
+    # Mínimo 5 caracteres si se proporciona
+    if len(descripcion) > 0 and len(descripcion) < 5:
+        return False, 'La descripción debe tener al menos 5 caracteres'
     
     return True, None
 
